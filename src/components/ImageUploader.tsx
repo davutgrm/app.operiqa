@@ -47,7 +47,7 @@ export default function ImageUploader({ onImageSelected, preview, onClear }: Pro
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     onDrop,
-    accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp'] },
+    accept: { 'image/*': ['.jpg', '.jpeg', '.png', '.webp', '.avif'] },
     maxFiles: 1,
     maxSize: 10 * 1024 * 1024,
     noClick: !!preview,
@@ -112,7 +112,7 @@ export default function ImageUploader({ onImageSelected, preview, onClear }: Pro
           <p className={`text-sm font-medium transition-colors ${isDragActive ? 'text-accent-hover' : 'text-mid'}`}>
             {isDragActive ? 'Bırakın...' : 'Sürükleyin veya tıklayın'}
           </p>
-          <p className="text-xs text-mute mt-1">JPG, PNG, WEBP · Maks. 10 MB · Min. {MIN_WIDTH}×{MIN_HEIGHT} px</p>
+          <p className="text-xs text-mute mt-1">JPG, PNG, WEBP, AVIF · Maks. 10 MB · Min. {MIN_WIDTH}×{MIN_HEIGHT} px</p>
         </div>
       </div>
 

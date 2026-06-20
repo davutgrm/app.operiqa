@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fal } from '@fal-ai/client'
+import sharp from 'sharp'
 
 export async function POST(request: NextRequest) {
   console.log('[generate-images] ▶ FONKSİYON ÇAĞRILDI', new Date().toISOString())
@@ -28,10 +29,22 @@ export async function POST(request: NextRequest) {
   if (!FAL_KEY) return NextResponse.json({ error: 'FAL_KEY yapılandırılmamış.' }, { status: 500 })
   if (!N8N_WEBHOOK_URL) return NextResponse.json({ error: 'N8N_WEBHOOK_URL yapılandırılmamış.' }, { status: 500 })
 
-  // 1. Görseli fal storage'a yükle → kalıcı URL al
+  // 1. AVIF ise fal.ai'nin desteklemediği format — JPEG'e çevir
+  let fileToUpload: File = imageFile
+  const isAvif = imageFile.type === 'image/avif' || imageFile.name.toLowerCase().endsWith('.avif')
+  if (isAvif) {
+    console.log('[generate-images] AVIF tespit edildi, JPEG\'e dönüştürülüyor...')
+    const buffer = Buffer.from(await imageFile.arrayBuffer())
+    const jpegBuffer = await sharp(buffer).jpeg({ quality: 92 }).toBuffer()
+    const jpegName = imageFile.name.replace(/\.avif$/i, '.jpg')
+    fileToUpload = new File([new Uint8Array(jpegBuffer)], jpegName, { type: 'image/jpeg' })
+    console.log('[generate-images] ✓ AVIF → JPEG dönüşümü tamamlandı:', jpegName, jpegBuffer.length, 'bytes')
+  }
+
+  // 2. Görseli fal storage'a yükle → kalıcı URL al
   console.log('[generate-images] fal.storage.upload başlıyor...')
   fal.config({ credentials: FAL_KEY })
-  const inputImageUrl = await fal.storage.upload(imageFile)
+  const inputImageUrl = await fal.storage.upload(fileToUpload)
   console.log('[generate-images] ✓ fal upload tamamlandı:', inputImageUrl)
 
   // 2. DB'ye "pending" generation kaydı oluştur (output_image_urls boş)
