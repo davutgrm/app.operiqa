@@ -62,8 +62,10 @@ export async function POST(request: NextRequest) {
   // 3. n8n'e gönder — n8n arka planda işler, Supabase'i doğrudan günceller
   const enrichedPrompt =
     `Change only the background and surrounding environment of this image. ` +
-    `Preserve the furniture's exact shape, color, texture, and proportions — do not alter the product in any way. ` +
-    `This is the ONLY piece of furniture that should appear in the image. Do not add any additional chairs, sofas, tables, or seating of any kind. The scene should contain just this single product and decorative elements only (plants, rugs, lighting, art). ` +
+    `Preserve the furniture's exact shape, color, texture, size, and proportions exactly as shown — do not alter, resize, or redesign the product. ` +
+    `Keep the furniture as the main focal point of the image, naturally placed and properly scaled within the scene — not too small, not floating in empty space. ` +
+    `Position the furniture realistically within the room, as it would naturally be placed by an interior designer (e.g., near a wall, beside a window, next to a table, in a corner) — not isolated in the middle of an empty room. ` +
+    `Do not add any additional seating furniture (extra chairs, sofas, etc.) to the scene. ` +
     `Place the furniture in the following scene: ${prompt.trim()}. ` +
     `Photorealistic, professional interior photography, 8K quality, natural lighting, no people.`
 
