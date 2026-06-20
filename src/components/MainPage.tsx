@@ -69,6 +69,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   const imagePollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const historyDetailRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     if (!pendingId) return
@@ -238,6 +239,12 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
   const isGenerating = genStatus === 'uploading' || genStatus === 'pending'
   const selectedHistoryGen = generations.find(g => g.id === selectedHistoryId) ?? null
+
+  useEffect(() => {
+    if (selectedHistoryId) {
+      setTimeout(() => historyDetailRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 50)
+    }
+  }, [selectedHistoryId])
 
   return (
     <div className="min-h-screen bg-canvas">
@@ -417,7 +424,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               </div>
 
               {selectedHistoryGen && (
-                <div className="mt-4 border border-line rounded-xl bg-surface p-5 space-y-4">
+                <div ref={historyDetailRef} className="mt-4 border border-line rounded-xl bg-surface p-5 space-y-4">
                   <div className="flex items-start justify-between gap-4">
                     <div>
                       <p className="text-sm font-medium text-hi">
