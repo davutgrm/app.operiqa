@@ -3,8 +3,7 @@
 import { useCallback, useState } from 'react'
 import { useDropzone } from 'react-dropzone'
 
-const HARD_MIN = 512   // fal.ai inference API'sinin reddettiği boyut
-const MIN_WIDTH = 1000 // kalite önerisi
+const MIN_WIDTH = 1000
 const MIN_HEIGHT = 800
 
 interface Props {
@@ -15,7 +14,6 @@ interface Props {
 
 export default function ImageUploader({ onImageSelected, preview, onClear }: Props) {
   const [resWarn, setResWarn] = useState<{ w: number; h: number } | null>(null)
-  const [hardBlock, setHardBlock] = useState<{ w: number; h: number } | null>(null)
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
     const file = acceptedFiles[0]
@@ -24,15 +22,6 @@ export default function ImageUploader({ onImageSelected, preview, onClear }: Pro
     const img = new Image()
     img.onload = () => {
       const { naturalWidth: w, naturalHeight: h } = img
-
-      if (w < HARD_MIN || h < HARD_MIN) {
-        URL.revokeObjectURL(objectUrl)
-        setHardBlock({ w, h })
-        setResWarn(null)
-        return
-      }
-
-      setHardBlock(null)
       setResWarn(w < MIN_WIDTH || h < MIN_HEIGHT ? { w, h } : null)
       onImageSelected(file, objectUrl)
     }
@@ -41,7 +30,6 @@ export default function ImageUploader({ onImageSelected, preview, onClear }: Pro
 
   const handleClear = useCallback(() => {
     setResWarn(null)
-    setHardBlock(null)
     onClear()
   }, [onClear])
 
@@ -116,16 +104,6 @@ export default function ImageUploader({ onImageSelected, preview, onClear }: Pro
         </div>
       </div>
 
-      {hardBlock && (
-        <div className="mt-2 flex items-start gap-2 bg-red-50 border border-red-200 rounded-lg px-3 py-2.5">
-          <svg className="w-3.5 h-3.5 mt-0.5 flex-shrink-0 text-red-500" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-          </svg>
-          <p className="text-xs text-red-600 leading-snug">
-            Görsel çok küçük ({hardBlock.w}×{hardBlock.h} px). AI modeli en az {HARD_MIN}×{HARD_MIN} px gerektiriyor — lütfen daha yüksek çözünürlüklü bir fotoğraf yükleyin.
-          </p>
-        </div>
-      )}
     </div>
   )
 }
