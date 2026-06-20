@@ -58,6 +58,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   const [currentGenerationId, setCurrentGenerationId] = useState<string | null>(null)
   const [error, setError] = useState('')
 
+  const [selectedForVideo, setSelectedForVideo] = useState<string | null>(null)
+  const [generatingVideo, setGeneratingVideo] = useState(false)
   const [videoStatus, setVideoStatus] = useState('')
   const [videoUrl, setVideoUrl] = useState<string | null>(null)
 
@@ -114,6 +116,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setPendingId(null)
     setPollCount(0)
     setGenStatus('idle')
+    setSelectedForVideo(null)
     setVideoUrl(null)
     setVideoStatus('')
     setError('')
@@ -129,6 +132,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setCurrentGenerationId(null)
     setPendingId(null)
     setPollCount(0)
+    setSelectedForVideo(null)
     setVideoUrl(null)
     setVideoStatus('')
 
@@ -165,17 +169,47 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setPendingId(data.generation.id)
   }
 
-  useEffect(() => {
-    if (genStatus !== 'completed' || !currentGenerationId) return
+  async function handleSelectForVideo(imageUrl: string) {
+    if (!currentGenerationId) return
+    setSelectedForVideo(imageUrl)
+    setGeneratingVideo(true)
+    setVideoStatus('Video oluşturuluyor...')
+    setVideoUrl(null)
 
-    setVideoStatus('Video hazırlanıyor — birkaç dakika sürebilir...')
+    let res: Response
+    try {
+      res = await fetch('/api/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl, generationId: currentGenerationId }),
+      })
+    } catch {
+      setVideoStatus('')
+      setGeneratingVideo(false)
+      setError('Sunucuya bağlanılamadı. Lütfen tekrar deneyin.')
+      return
+    }
+    const data = await res.json()
 
-    const generationId = currentGenerationId
+    if (!res.ok) {
+      setVideoStatus('')
+      setGeneratingVideo(false)
+      setError(data.error ?? 'Video başlatılamadı.')
+      return
+    }
+
+    pollVideoStatus(data.requestId, currentGenerationId)
+  }
+
+  function pollVideoStatus(requestId: string, generationId: string) {
+    setVideoStatus('Video işleniyor — 1–3 dakika sürebilir...')
 
     const check = async () => {
       let res: Response
       try {
-        res = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}`)
+        res = await fetch(
+          `/api/video-status?requestId=${encodeURIComponent(requestId)}&generationId=${encodeURIComponent(generationId)}`
+        )
       } catch {
         videoPollingRef.current = setTimeout(check, 12000)
         return
@@ -183,6 +217,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       const data = await res.json()
 
       if (data.status === 'COMPLETED') {
+        setGeneratingVideo(false)
         setVideoStatus('')
         setVideoUrl(data.videoUrl)
         setGenerations(prev =>
@@ -190,12 +225,17 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         )
         return
       }
+      if (data.status === 'FAILED') {
+        setGeneratingVideo(false)
+        setVideoStatus('')
+        setError('Video oluşturma başarısız oldu.')
+        return
+      }
       videoPollingRef.current = setTimeout(check, 12000)
     }
 
-    videoPollingRef.current = setTimeout(check, 10000)
-    return () => { if (videoPollingRef.current) clearTimeout(videoPollingRef.current) }
-  }, [genStatus, currentGenerationId])
+    check()
+  }
 
   const isGenerating = genStatus === 'uploading' || genStatus === 'pending'
   const selectedHistoryGen = generations.find(g => g.id === selectedHistoryId) ?? null
@@ -236,6 +276,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   setCurrentGenerationId(null)
                   setPendingId(null)
                   setGenStatus('idle')
+                  setSelectedForVideo(null)
                   setVideoUrl(null)
                   setVideoStatus('')
                   setError('')
@@ -312,7 +353,12 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
               {genStatus === 'completed' && generatedImages.length > 0 && (
                 <div className="space-y-6">
-                  <GeneratedImages images={generatedImages} />
+                  <GeneratedImages
+                    images={generatedImages}
+                    onSelectForVideo={handleSelectForVideo}
+                    generatingVideo={generatingVideo}
+                    selectedForVideo={selectedForVideo}
+                  />
                   {videoStatus && (
                     <div className="flex items-center gap-3 bg-canvas border border-line rounded-xl px-4 py-3">
                       <svg className="w-4 h-4 animate-spin flex-shrink-0 text-mid" fill="none" viewBox="0 0 24 24">
