@@ -63,7 +63,7 @@ export async function POST(request: NextRequest) {
   const enrichedPrompt =
     `Change only the background and surrounding environment of this image. ` +
     `Preserve the furniture's exact shape, color, texture, and proportions — do not alter the product in any way. ` +
-    `Do not add any additional furniture or seating to the scene. Only the original product should be visible as furniture. ` +
+    `This is the ONLY piece of furniture that should appear in the image. Do not add any additional chairs, sofas, tables, or seating of any kind. The scene should contain just this single product and decorative elements only (plants, rugs, lighting, art). ` +
     `Place the furniture in the following scene: ${prompt.trim()}. ` +
     `Photorealistic, professional interior photography, 8K quality, natural lighting, no people.`
 
