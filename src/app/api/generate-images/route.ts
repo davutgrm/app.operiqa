@@ -61,13 +61,13 @@ export async function POST(request: NextRequest) {
 
   // 3. n8n'e gönder — n8n arka planda işler, Supabase'i doğrudan günceller
   const enrichedPrompt =
-    `Change only the background and surrounding environment of this image. ` +
-    `Preserve the furniture's exact shape, color, texture, size, and proportions exactly as shown — do not alter, resize, or redesign the product. ` +
-    `Keep the furniture as the main focal point of the image, naturally placed and properly scaled within the scene — not too small, not floating in empty space. ` +
-    `Position the furniture realistically within the room, as it would naturally be placed by an interior designer (e.g., near a wall, beside a window, next to a table, in a corner) — not isolated in the middle of an empty room. ` +
-    `Do not add any additional seating furniture (extra chairs, sofas, etc.) to the scene. ` +
+    `Change ONLY the background and surrounding environment of this image. ` +
+    `CRITICAL SIZE RULE: The furniture in the output image MUST occupy the same proportion of the frame as it does in the input image. If the chair takes up 60% of the image height in the original, it must take up approximately 60% of the image height in the result. DO NOT shrink, distance, or minimize the furniture. ` +
+    `CRITICAL PLACEMENT RULE: Position the furniture close to a wall, window, or corner — as a single accent chair would realistically be placed in a real home. The furniture should appear close to the camera, filling a significant portion of the frame, NOT in the center of a wide empty room. ` +
+    `Preserve the furniture's exact shape, color, texture, and proportions — do not alter the product in any way. ` +
+    `Do not add any additional seating furniture (extra chairs, sofas, couches) to the scene. ` +
     `Place the furniture in the following scene: ${prompt.trim()}. ` +
-    `Photorealistic, professional interior photography, 8K quality, natural lighting, no people.`
+    `Photorealistic, professional interior photography, 8K quality, natural lighting, no people, close-up product photography style, not a wide architectural shot.`
 
   const n8nBody = {
     scene_description: enrichedPrompt,
