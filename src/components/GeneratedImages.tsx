@@ -7,6 +7,18 @@ interface Props {
   selectedForVideo: string | null
 }
 
+async function downloadImage(url: string, index: number) {
+  const res = await fetch(url)
+  const blob = await res.blob()
+  const ext = blob.type === 'image/png' ? 'png' : 'jpg'
+  const blobUrl = URL.createObjectURL(blob)
+  const a = document.createElement('a')
+  a.href = blobUrl
+  a.download = `operiqa-${index + 1}.${ext}`
+  a.click()
+  URL.revokeObjectURL(blobUrl)
+}
+
 export default function GeneratedImages({ images, onSelectForVideo, generatingVideo, selectedForVideo }: Props) {
   return (
     <div>
@@ -29,6 +41,15 @@ export default function GeneratedImages({ images, onSelectForVideo, generatingVi
 
             {/* Actions */}
             <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+              <button
+                onClick={() => downloadImage(url, i)}
+                title="İndir"
+                className="w-8 h-8 bg-surface/90 hover:bg-surface backdrop-blur-sm rounded-lg flex items-center justify-center transition-colors border border-line"
+              >
+                <svg className="w-3.5 h-3.5 text-hi" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                </svg>
+              </button>
               <a
                 href={url}
                 target="_blank"
@@ -64,7 +85,7 @@ export default function GeneratedImages({ images, onSelectForVideo, generatingVi
         ))}
       </div>
 
-      <p className="text-xs text-mute mt-2">Görselin üzerine gelin → video için oynat ikonuna tıklayın</p>
+      <p className="text-xs text-mute mt-2">Görselin üzerine gelin → indirin, tam boyut açın veya video oluşturun</p>
     </div>
   )
 }
