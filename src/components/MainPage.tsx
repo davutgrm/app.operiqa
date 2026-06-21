@@ -297,6 +297,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         setGenerations(prev =>
           prev.map(g => g.id === generationId ? { ...g, video_url: pollData.videoUrl } : g)
         )
+        setSelectedHistoryId(generationId)
         return
       }
 
