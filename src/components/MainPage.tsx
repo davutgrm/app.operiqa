@@ -65,9 +65,11 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
   const [generations, setGenerations] = useState<Generation[]>(initialGenerations)
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null)
+  const [historyVideoGenId, setHistoryVideoGenId] = useState<string | null>(null)
 
   const imagePollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const historyVideoRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const historyDetailRef = useRef<HTMLDivElement>(null)
 
@@ -122,6 +124,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setError('')
     if (imagePollingRef.current) clearTimeout(imagePollingRef.current)
     if (videoPollingRef.current) clearTimeout(videoPollingRef.current)
+    if (historyVideoRef.current) clearTimeout(historyVideoRef.current)
   }
 
   async function handleGenerate() {
@@ -198,19 +201,26 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       return
     }
 
-    pollVideoStatus(data.requestId, currentGenerationId)
+    pollVideoStatus(currentGenerationId)
   }
 
-  function pollVideoStatus(requestId: string, generationId: string) {
+  function pollVideoStatus(generationId: string) {
     setVideoStatus('Video işleniyor — 1–3 dakika sürebilir...')
+    let attempts = 0
+    const MAX_ATTEMPTS = 40 // ~8 dakika
 
     const check = async () => {
+      attempts++
       let res: Response
       try {
-        res = await fetch(
-          `/api/video-status?requestId=${encodeURIComponent(requestId)}&generationId=${encodeURIComponent(generationId)}`
-        )
+        res = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}`)
       } catch {
+        if (attempts >= MAX_ATTEMPTS) {
+          setGeneratingVideo(false)
+          setVideoStatus('')
+          setError('Video oluşturma zaman aşımına uğradı.')
+          return
+        }
         videoPollingRef.current = setTimeout(check, 12000)
         return
       }
@@ -225,13 +235,78 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         )
         return
       }
-      if (data.status === 'FAILED') {
+
+      if (attempts >= MAX_ATTEMPTS) {
         setGeneratingVideo(false)
         setVideoStatus('')
-        setError('Video oluşturma başarısız oldu.')
+        setError('Video oluşturma zaman aşımına uğradı. Lütfen tekrar deneyin.')
         return
       }
+
       videoPollingRef.current = setTimeout(check, 12000)
+    }
+
+    check()
+  }
+
+  async function handleHistoryVideoGenerate(gen: Generation) {
+    const imageUrl = gen.output_image_urls[0]
+    const generationId = gen.id
+    setHistoryVideoGenId(generationId)
+
+    let res: Response
+    try {
+      res = await fetch('/api/generate-video', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageUrl, generationId }),
+      })
+    } catch {
+      setHistoryVideoGenId(null)
+      setError('Sunucuya bağlanılamadı. Lütfen tekrar deneyin.')
+      return
+    }
+    const data = await res.json()
+    if (!res.ok) {
+      setHistoryVideoGenId(null)
+      setError(data.error ?? 'Video başlatılamadı.')
+      return
+    }
+
+    let attempts = 0
+    const MAX_ATTEMPTS = 40
+
+    const check = async () => {
+      attempts++
+      let pollRes: Response
+      try {
+        pollRes = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}`)
+      } catch {
+        if (attempts >= MAX_ATTEMPTS) {
+          setHistoryVideoGenId(null)
+          setError('Video oluşturma zaman aşımına uğradı.')
+          return
+        }
+        historyVideoRef.current = setTimeout(check, 12000)
+        return
+      }
+      const pollData = await pollRes.json()
+
+      if (pollData.status === 'COMPLETED') {
+        setHistoryVideoGenId(null)
+        setGenerations(prev =>
+          prev.map(g => g.id === generationId ? { ...g, video_url: pollData.videoUrl } : g)
+        )
+        return
+      }
+
+      if (attempts >= MAX_ATTEMPTS) {
+        setHistoryVideoGenId(null)
+        setError('Video oluşturma zaman aşımına uğradı. Lütfen tekrar deneyin.')
+        return
+      }
+
+      historyVideoRef.current = setTimeout(check, 12000)
     }
 
     check()
@@ -389,17 +464,24 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
                 {generations.map(gen => {
                   const isSelected = selectedHistoryId === gen.id
+                  const isProcessingVideo = historyVideoGenId === gen.id
                   return (
-                    <button
+                    <div
                       key={gen.id}
-                      onClick={() => setSelectedHistoryId(isSelected ? null : gen.id)}
                       className={`group text-left rounded-xl border overflow-hidden transition-all ${
                         isSelected
                           ? 'border-hi ring-1 ring-black/10'
                           : 'border-line hover:border-line-mid'
                       }`}
                     >
-                      <div className="relative overflow-hidden" style={{ aspectRatio: '4/3' }}>
+                      <div
+                        role="button"
+                        tabIndex={0}
+                        onClick={() => setSelectedHistoryId(isSelected ? null : gen.id)}
+                        onKeyDown={e => e.key === 'Enter' && setSelectedHistoryId(isSelected ? null : gen.id)}
+                        className="relative overflow-hidden cursor-pointer"
+                        style={{ aspectRatio: '4/3' }}
+                      >
                         <img
                           src={gen.output_image_urls[0]}
                           alt=""
@@ -416,9 +498,34 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                         <p className="text-xs text-hi font-medium truncate leading-snug">
                           {gen.prompt || 'Sahne açıklaması yok'}
                         </p>
-                        <p className="text-[11px] text-mute mt-0.5">{formatDate(gen.created_at)}</p>
+                        <div className="flex items-center justify-between mt-0.5">
+                          <p className="text-[11px] text-mute">{formatDate(gen.created_at)}</p>
+                          {!gen.video_url && (
+                            isProcessingVideo ? (
+                              <span className="flex items-center gap-1 text-[11px] font-medium text-mid">
+                                <svg className="w-3 h-3 animate-spin" fill="none" viewBox="0 0 24 24">
+                                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                                </svg>
+                                İşleniyor...
+                              </span>
+                            ) : (
+                              <button
+                                onClick={() => handleHistoryVideoGenerate(gen)}
+                                disabled={historyVideoGenId !== null}
+                                className="flex items-center gap-1 text-[11px] font-medium text-mid hover:text-hi disabled:opacity-40 disabled:cursor-not-allowed transition-colors"
+                              >
+                                <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                </svg>
+                                Video Yap
+                              </button>
+                            )
+                          )}
+                        </div>
                       </div>
-                    </button>
+                    </div>
                   )
                 })}
               </div>
