@@ -23,7 +23,7 @@ interface Props {
 }
 
 const DEFAULT_PROMPT =
-  'A luxurious furniture piece styled in a modern Scandinavian living room with warm natural light, soft textures, and elegant decor.'
+  'Luxury penthouse interior, warm natural sunlight, premium interior design, Architectural Digest style, luxury furniture catalog photography, photorealistic, ultra realistic.'
 
 async function downloadImage(url: string, index: number) {
   const res = await fetch(url)
