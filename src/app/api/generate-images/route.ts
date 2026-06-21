@@ -69,6 +69,7 @@ export async function POST(request: NextRequest) {
     `Photorealistic, professional interior photography, 8K quality, natural lighting, no people.`
 
   const n8nBody = {
+    action: 'image',
     scene_description: enrichedPrompt,
     image_url: inputImageUrl,
     generation_id: generation.id,
