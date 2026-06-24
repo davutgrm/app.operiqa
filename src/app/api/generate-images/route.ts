@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fal } from '@fal-ai/client'
 import sharp from 'sharp'
+import { IMAGE_LIMIT } from '../usage/route'
 
 export async function POST(request: NextRequest) {
   console.log('[generate-images] ▶ FONKSİYON ÇAĞRILDI', new Date().toISOString())
@@ -13,6 +14,17 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
   console.log('[generate-images] ✓ Kullanıcı doğrulandı:', user.id)
+
+  // Monthly image limit check
+  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
+  const { count: imageCount } = await supabase
+    .from('generations')
+    .select('*', { count: 'exact', head: true })
+    .eq('user_id', user.id)
+    .gte('created_at', monthStart.toISOString())
+  if ((imageCount ?? 0) >= IMAGE_LIMIT) {
+    return NextResponse.json({ error: 'Bu ay görsel limitinize ulaştınız.' }, { status: 429 })
+  }
 
   const formData = await request.formData()
   const imageFile = formData.get('image') as File

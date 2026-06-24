@@ -75,12 +75,29 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   const [videoImageUrl, setVideoImageUrl] = useState<string | null>(null)
   const [videoGenId, setVideoGenId] = useState<string | null>(null)
 
+  const [imageCount, setImageCount] = useState(0)
+  const [videoCount, setVideoCount] = useState(0)
+  const IMAGE_LIMIT = 100
+  const VIDEO_LIMIT = 30
+
   const imagePollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const videoModeRef = useRef(videoMode)
 
   useEffect(() => { videoModeRef.current = videoMode }, [videoMode])
+
+  async function fetchUsage() {
+    try {
+      const res = await fetch('/api/usage')
+      if (!res.ok) return
+      const data = await res.json()
+      setImageCount(data.imageCount ?? 0)
+      setVideoCount(data.videoCount ?? 0)
+    } catch {}
+  }
+
+  useEffect(() => { fetchUsage() }, [])
 
   // Layered Escape: modal first, then drawer
   useEffect(() => {
@@ -121,6 +138,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         setCurrentGenerationId(genId)
         setPendingId(null)
         setGenerations(prev => [data.generation, ...prev.filter((g: Generation) => g.id !== pendingId)])
+        fetchUsage()
         setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
         if (videoModeRef.current && urls.length > 0) startVideoGeneration(urls[0], genId!)
         return
@@ -254,6 +272,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       setGeneratedImages(urls)
       setCurrentGenerationId(genId)
       setGenerations(prev => [data.generation, ...prev.filter((g: Generation) => g.id !== genId)])
+      fetchUsage()
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
       if (videoMode && urls.length > 0) startVideoGeneration(urls[0], genId)
       return
@@ -323,6 +342,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         setVideoStatus('')
         setVideoUrl(data.videoUrl)
         setGenerations(prev => prev.map(g => g.id === generationId ? { ...g, video_url: data.videoUrl } : g))
+        fetchUsage()
         setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 200)
         return
       }
@@ -358,6 +378,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   }
 
   const isGenerating = genStatus === 'uploading' || genStatus === 'pending'
+  const imageAtLimit = imageCount >= IMAGE_LIMIT
+  const videoAtLimit = videoCount >= VIDEO_LIMIT
   const selectedHistoryGen = generations.find(g => g.id === selectedHistoryId) ?? null
 
   return (
@@ -385,9 +407,31 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
         {/* ── Generate section ───────────────────────────────── */}
         <section className="max-w-4xl mx-auto px-6 pt-14 pb-12">
-          <div className="mb-8">
-            <h1 className="text-2xl font-semibold text-hi tracking-tight">Lifestyle görsel oluştur</h1>
-            <p className="text-sm text-mid mt-1.5">Ürün fotoğrafı yükleyin, sahne tanımlayın, AI ile üretin.</p>
+          <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
+            <div>
+              <h1 className="text-2xl font-semibold text-hi tracking-tight">Lifestyle görsel oluştur</h1>
+              <p className="text-sm text-mid mt-1.5">Ürün fotoğrafı yükleyin, sahne tanımlayın, AI ile üretin.</p>
+            </div>
+            <div className="flex items-center gap-3 text-xs text-mute bg-raised border border-line rounded-xl px-3.5 py-2.5 flex-shrink-0">
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                </svg>
+                <span className={imageCount >= IMAGE_LIMIT ? 'text-red-500 font-medium' : ''}>
+                  {imageCount}/{IMAGE_LIMIT} görsel
+                </span>
+              </div>
+              <div className="w-px h-3 bg-line" />
+              <div className="flex items-center gap-1.5">
+                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                <span className={videoCount >= VIDEO_LIMIT ? 'text-red-500 font-medium' : ''}>
+                  {videoCount}/{VIDEO_LIMIT} video
+                </span>
+              </div>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -503,34 +547,53 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               )}
 
               {videoImageUrl ? (
-                <button
-                  onClick={() => startVideoGeneration(videoImageUrl, videoGenId!)}
-                  disabled={generatingVideo}
-                  className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
-                  {generatingVideo ? (
-                    <>
-                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                <>
+                  {videoAtLimit && (
+                    <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Video oluşturuluyor...
-                    </>
-                  ) : (
-                    <>
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                      </svg>
-                      Video Oluştur
-                    </>
+                      Bu ay video limitinize ulaştınız.
+                    </div>
                   )}
-                </button>
+                  <button
+                    onClick={() => startVideoGeneration(videoImageUrl, videoGenId!)}
+                    disabled={generatingVideo || videoAtLimit}
+                    className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
+                    {generatingVideo ? (
+                      <>
+                        <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                          <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                          <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                        </svg>
+                        Video oluşturuluyor...
+                      </>
+                    ) : (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Video Oluştur
+                      </>
+                    )}
+                  </button>
+                </>
               ) : (
-                <button
-                  onClick={handleGenerate} disabled={!imageFile || isGenerating || analyzingImage}
-                  className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
-                >
+                <>
+                  {imageAtLimit && (
+                    <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                      <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Bu ay görsel limitinize ulaştınız.
+                    </div>
+                  )}
+                  <button
+                    onClick={handleGenerate} disabled={!imageFile || isGenerating || analyzingImage || imageAtLimit}
+                    className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+                  >
                   {isGenerating ? (
                     <>
                       <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
@@ -540,7 +603,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                       {genStatus === 'uploading' ? 'Yükleniyor...' : 'İşleniyor...'}
                     </>
                   ) : videoMode ? 'Görsel + Video Oluştur' : 'Görselleri Oluştur'}
-                </button>
+                  </button>
+                </>
               )}
             </div>
           </div>
