@@ -398,27 +398,35 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               <div className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-[11px] font-medium text-mute uppercase tracking-widest">Prompt</label>
-                  <div className="flex items-center gap-1">
-                    <button type="button" onClick={() => setPrompt('')} title="Temizle"
-                      className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
-                      <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
-                      </svg>
-                    </button>
-                    <button type="button" onClick={handleCopyPrompt} title="Kopyala"
-                      className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
-                      {copied
-                        ? <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
-                        : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
-                      }
-                    </button>
-                  </div>
+                  {!videoImageUrl && (
+                    <div className="flex items-center gap-1">
+                      <button type="button" onClick={() => setPrompt('')} title="Temizle"
+                        className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                        </svg>
+                      </button>
+                      <button type="button" onClick={handleCopyPrompt} title="Kopyala"
+                        className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
+                        {copied
+                          ? <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                          : <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" /></svg>
+                        }
+                      </button>
+                    </div>
+                  )}
                 </div>
-                <textarea
-                  value={prompt} onChange={e => setPrompt(e.target.value)} disabled={analyzingImage} rows={6}
-                  placeholder={analyzingImage ? 'Analyzing image...' : 'Mobilyanın nasıl bir ortamda olmasını istiyorsunuz?'}
-                  className="w-full flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-hi placeholder:text-mute resize-none outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all disabled:opacity-60 disabled:cursor-wait"
-                />
+                {videoImageUrl ? (
+                  <div className="flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-mute select-none" style={{ minHeight: 120 }}>
+                    Camera is moving around the product slowly
+                  </div>
+                ) : (
+                  <textarea
+                    value={prompt} onChange={e => setPrompt(e.target.value)} disabled={analyzingImage} rows={6}
+                    placeholder={analyzingImage ? 'Analyzing image...' : 'Mobilyanın nasıl bir ortamda olmasını istiyorsunuz?'}
+                    className="w-full flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-hi placeholder:text-mute resize-none outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all disabled:opacity-60 disabled:cursor-wait"
+                  />
+                )}
               </div>
 
               {error && (
