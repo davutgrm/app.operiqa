@@ -102,6 +102,7 @@ export async function POST(request: NextRequest) {
       }
       return value
     })
+    console.log('BODY CHARS:', JSON.stringify(safeBody).split('').slice(0,10).map(c => c.charCodeAt(0)))
     webhookRes = await fetch(N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
