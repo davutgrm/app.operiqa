@@ -22,9 +22,6 @@ interface Props {
   initialGenerations: Generation[]
 }
 
-const DEFAULT_PROMPT =
-  'Luxury penthouse interior, warm natural sunlight, premium interior design, Architectural Digest style, luxury furniture catalog photography, photorealistic, ultra realistic.'
-
 async function downloadImage(url: string, index: number) {
   const res = await fetch(url)
   const blob = await res.blob()
@@ -53,7 +50,7 @@ function truncate(str: string, n: number) {
 export default function MainPage({ userEmail, initialGenerations }: Props) {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
-  const [prompt, setPrompt] = useState(DEFAULT_PROMPT)
+  const [prompt, setPrompt] = useState('')
   const [analyzingImage, setAnalyzingImage] = useState(false)
   const [copied, setCopied] = useState(false)
   const [videoMode, setVideoMode] = useState(false)
@@ -155,9 +152,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         body: JSON.stringify({ imageBase64: data.base64, mediaType: data.mediaType }),
       })
       const json = await res.json()
-      setPrompt(res.ok && json.description ? json.description : DEFAULT_PROMPT)
+      setPrompt(res.ok && json.description ? json.description : '')
     } catch {
-      setPrompt(DEFAULT_PROMPT)
+      setPrompt('')
     } finally {
       setAnalyzingImage(false)
     }
@@ -166,7 +163,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   function resetSession() {
     setImageFile(null)
     setImagePreview(null)
-    setPrompt(DEFAULT_PROMPT)
+    setPrompt('')
     setAnalyzingImage(false)
     setGeneratedImages([])
     setCurrentGenerationId(null)
@@ -399,7 +396,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 <div className="flex items-center justify-between mb-2">
                   <label className="text-[11px] font-medium text-mute uppercase tracking-widest">Prompt</label>
                   <div className="flex items-center gap-1">
-                    <button type="button" onClick={() => setPrompt(DEFAULT_PROMPT)} title="Varsayılana sıfırla"
+                    <button type="button" onClick={() => setPrompt('')} title="Temizle"
                       className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
                       <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
