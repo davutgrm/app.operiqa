@@ -73,6 +73,7 @@ export async function POST(request: NextRequest) {
     scene_description: enrichedPrompt,
     image_url: inputImageUrl,
     generation_id: generation.id,
+    image_size: 'portrait_4_3',
   }
 
   console.log('[generate-images] ▶ n8n fetch BAŞLIYOR — URL:', N8N_WEBHOOK_URL)
