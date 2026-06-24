@@ -301,6 +301,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setHistoryOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setVideoFromHistory({ imageUrl, generationId: gen.id })
+    setPrompt('')
     setVideoUrl(null)
     setVideoStatus('')
     setGeneratingVideo(false)
