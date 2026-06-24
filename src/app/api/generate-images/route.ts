@@ -73,13 +73,15 @@ export async function POST(request: NextRequest) {
   console.log('[generate-images] ✓ DB kaydı oluşturuldu, generation.id:', generation.id)
 
   // 3. n8n'e gönder — n8n arka planda işler, Supabase'i doğrudan günceller
-  const enrichedPrompt =
+  let enrichedPrompt =
     `Change only the background and surrounding environment of this image. ` +
     `Preserve the furniture's exact shape, color, material, texture, and proportions. ` +
     `Do not redesign or alter the product in any way. ` +
     `Do not add any additional furniture or seating to the scene. ` +
     `Place the furniture in the following scene: ${prompt.trim()}. ` +
     `Photorealistic, professional interior photography, 8K quality, natural lighting, no people.`
+
+  enrichedPrompt = enrichedPrompt.replace(/^﻿/, '').replace(/[^\x00-\xFF]/g, ' ')
 
   const n8nBody = {
     action: 'image',
