@@ -257,9 +257,12 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     pollVideoStatus(generationId)
   }
 
-  async function handleSelectForVideo(imageUrl: string) {
+  function handleSelectForVideo(imageUrl: string) {
     if (!currentGenerationId) return
-    await startVideoGeneration(imageUrl, currentGenerationId)
+    setVideoImageUrl(imageUrl)
+    setVideoGenId(currentGenerationId)
+    setPrompt('')
+    window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
   function pollVideoStatus(generationId: string) {
