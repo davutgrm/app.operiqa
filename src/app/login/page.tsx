@@ -34,6 +34,7 @@ export default function LoginPage() {
     setLoading(true)
     try {
       const supabase = createClient()
+      await supabase.auth.signOut({ scope: 'local' })
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: 'https://app-operiqa.vercel.app/auth/reset-password',
       })
