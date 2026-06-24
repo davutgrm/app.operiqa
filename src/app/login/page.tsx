@@ -33,19 +33,27 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const supabase = createClient()
-      await supabase.auth.signOut({ scope: 'local' })
-      const { error } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: 'https://app-operiqa.vercel.app/auth/reset-password',
+      const res = await fetch('https://ycxqpundxpsmcprshkmh.supabase.co/auth/v1/recover', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
+        },
+        body: JSON.stringify({
+          email,
+          redirect_to: 'https://app-operiqa.vercel.app/auth/reset-password',
+        }),
       })
-      if (error) {
-        console.error('Supabase resetPasswordForEmail error:', error)
-        setError(error.message)
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}))
+        const msg = data?.msg || data?.message || data?.error || `Error ${res.status}`
+        console.error('recover error:', msg)
+        setError(msg)
         return
       }
       setResetSent(true)
     } catch (err) {
-      console.error('resetPasswordForEmail unexpected error:', err)
+      console.error('recover fetch error:', err)
       setError('Password reset request failed. Please try again.')
     } finally {
       setLoading(false)
