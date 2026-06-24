@@ -261,6 +261,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     if (!currentGenerationId) return
     setVideoImageUrl(imageUrl)
     setVideoGenId(currentGenerationId)
+    setVideoMode(true)
     setPrompt('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
