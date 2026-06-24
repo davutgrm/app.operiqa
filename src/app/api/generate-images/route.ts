@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { fal } from '@fal-ai/client'
 import sharp from 'sharp'
 import { IMAGE_LIMIT } from '../usage/route'
 
@@ -55,22 +56,9 @@ export async function POST(request: NextRequest) {
   }
 
   // 2. Görseli fal storage'a yükle → kalıcı URL al
-  console.log('[generate-images] fal upload başlıyor...')
-  const falUploadRes = await fetch('https://fal.run/storage/upload', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Key ${FAL_KEY}`,
-      'Content-Type': fileToUpload.type,
-    },
-    body: fileToUpload,
-  })
-  if (!falUploadRes.ok) {
-    const errText = await falUploadRes.text()
-    console.error('[generate-images] ✗ fal upload hatası:', falUploadRes.status, errText)
-    return NextResponse.json({ error: 'Fotoğraf yüklenemedi.' }, { status: 502 })
-  }
-  const falUploadData = await falUploadRes.json()
-  const inputImageUrl: string = falUploadData.url
+  console.log('[generate-images] fal.storage.upload başlıyor...')
+  fal.config({ credentials: FAL_KEY })
+  const inputImageUrl = await fal.storage.upload(fileToUpload)
   console.log('[generate-images] ✓ fal upload tamamlandı:', inputImageUrl)
 
   // 2. DB'ye "pending" generation kaydı oluştur (output_image_urls boş)
