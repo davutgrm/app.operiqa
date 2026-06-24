@@ -97,7 +97,7 @@ export async function POST(request: NextRequest) {
     webhookRes = await fetch(N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(n8nBody),
+      body: Buffer.from(JSON.stringify(n8nBody), 'utf8'),
     })
     console.log('[generate-images] ✓ n8n fetch TAMAMLANDI — status:', webhookRes.status, webhookRes.statusText)
   } catch (err) {
