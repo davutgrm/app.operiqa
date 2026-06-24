@@ -78,6 +78,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   const imagePollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
+  const productImageRef = useRef<HTMLDivElement>(null)
   const videoModeRef = useRef(videoMode)
 
   useEffect(() => { videoModeRef.current = videoMode }, [videoMode])
@@ -299,7 +300,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   function selectForHistoryVideo(gen: Generation, imageUrl: string) {
     setSelectedHistoryId(null)
     setHistoryOpen(false)
-    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setTimeout(() => productImageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 320)
     setVideoFromHistory({ imageUrl, generationId: gen.id })
     setPrompt('')
     setVideoUrl(null)
@@ -338,7 +339,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left */}
-            <div>
+            <div ref={productImageRef}>
               <label className="block text-[11px] font-medium text-mute mb-2 uppercase tracking-widest">
                 {videoFromHistory ? 'Selected Image' : 'Product Image'}
               </label>
