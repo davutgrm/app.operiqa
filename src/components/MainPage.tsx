@@ -52,6 +52,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
   const [analyzingImage, setAnalyzingImage] = useState(false)
+  const [analyzeError, setAnalyzeError] = useState(false)
+  const [transparentBg, setTransparentBg] = useState(false)
   const [copied, setCopied] = useState(false)
   const [videoMode, setVideoMode] = useState(false)
   const [historyOpen, setHistoryOpen] = useState(false)
@@ -152,12 +154,43 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         body: JSON.stringify({ imageBase64: data.base64, mediaType: data.mediaType }),
       })
       const json = await res.json()
-      setPrompt(res.ok && json.description ? json.description : '')
-    } catch {
-      setPrompt('')
+      if (res.ok && json.description) {
+        setPrompt(json.description)
+        setAnalyzeError(false)
+      } else {
+        console.error('[analyze-image] API hatası:', json)
+        setAnalyzeError(true)
+      }
+    } catch (err) {
+      console.error('[analyze-image] fetch hatası:', err)
+      setAnalyzeError(true)
     } finally {
       setAnalyzingImage(false)
     }
+  }
+
+  async function checkTransparency(file: File): Promise<boolean> {
+    if (!file.type.includes('png')) return false
+    return new Promise(resolve => {
+      const img = new Image()
+      const url = URL.createObjectURL(file)
+      img.onload = () => {
+        const canvas = document.createElement('canvas')
+        canvas.width = img.width
+        canvas.height = img.height
+        const ctx = canvas.getContext('2d')
+        if (!ctx) { URL.revokeObjectURL(url); resolve(false); return }
+        ctx.drawImage(img, 0, 0)
+        const { data } = ctx.getImageData(0, 0, canvas.width, canvas.height)
+        URL.revokeObjectURL(url)
+        for (let i = 3; i < data.length; i += 16) {
+          if (data[i] < 250) { resolve(true); return }
+        }
+        resolve(false)
+      }
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(false) }
+      img.src = url
+    })
   }
 
   function resetSession() {
@@ -165,6 +198,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setImagePreview(null)
     setPrompt('')
     setAnalyzingImage(false)
+    setAnalyzeError(false)
+    setTransparentBg(false)
     setGeneratedImages([])
     setCurrentGenerationId(null)
     setPendingId(null)
@@ -288,6 +323,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         setVideoStatus('')
         setVideoUrl(data.videoUrl)
         setGenerations(prev => prev.map(g => g.id === generationId ? { ...g, video_url: data.videoUrl } : g))
+        setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 200)
         return
       }
 
@@ -332,6 +368,19 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         onToggleHistory={() => setHistoryOpen(o => !o)}
       />
 
+      {/* ── Video generating banner ────────────────────────── */}
+      {generatingVideo && (
+        <div className="fixed top-14 inset-x-0 z-30 bg-neutral-900 text-white">
+          <div className="max-w-4xl mx-auto px-6 py-3 flex items-center gap-3">
+            <svg className="w-4 h-4 animate-spin flex-shrink-0 text-white/70" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+            </svg>
+            <p className="text-sm font-medium">Videonuz hazırlanıyor — birkaç dakika içinde altta görünecek</p>
+          </div>
+        </div>
+      )}
+
       <div className="pt-14">
 
         {/* ── Generate section ───────────────────────────────── */}
@@ -365,15 +414,28 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   </button>
                 </div>
               ) : (
-                <ImageUploader
-                  onImageSelected={(file, prev) => {
-                    setImageFile(file); setImagePreview(prev); setGeneratedImages([]); setCurrentGenerationId(null)
-                    setPendingId(null); setGenStatus('idle'); setSelectedForVideo(null); setVideoUrl(null)
-                    setVideoStatus(''); setError(''); setVideoImageUrl(null); setVideoGenId(null); analyzeImage(file)
-                  }}
-                  preview={imagePreview}
-                  onClear={resetSession}
-                />
+                <>
+                  <ImageUploader
+                    onImageSelected={(file, prev) => {
+                      setImageFile(file); setImagePreview(prev); setGeneratedImages([]); setCurrentGenerationId(null)
+                      setPendingId(null); setGenStatus('idle'); setSelectedForVideo(null); setVideoUrl(null)
+                      setVideoStatus(''); setError(''); setVideoImageUrl(null); setVideoGenId(null)
+                      setAnalyzeError(false); setTransparentBg(false)
+                      analyzeImage(file)
+                      checkTransparency(file).then(setTransparentBg)
+                    }}
+                    preview={imagePreview}
+                    onClear={resetSession}
+                  />
+                  {transparentBg && (
+                    <div className="mt-2.5 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-xl px-3 py-2.5">
+                      <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
+                      </svg>
+                      Ürününüzün arka planı şeffaf görünüyor. Daha iyi sonuç için beyaz arka planlı fotoğraf önerilir.
+                    </div>
+                  )}
+                </>
               )}
             </div>
 
@@ -425,7 +487,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 ) : (
                   <textarea
                     value={prompt} onChange={e => setPrompt(e.target.value)} disabled={analyzingImage} rows={6}
-                    placeholder={analyzingImage ? 'Analyzing image...' : 'Mobilyanın nasıl bir ortamda olmasını istiyorsunuz?'}
+                    placeholder={analyzingImage ? 'Analyzing image...' : analyzeError ? 'Sahne açıklaması yazınız' : 'Mobilyanın nasıl bir ortamda olmasını istiyorsunuz?'}
                     className="w-full flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-hi placeholder:text-mute resize-none outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all disabled:opacity-60 disabled:cursor-wait"
                   />
                 )}
@@ -508,16 +570,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               {genStatus === 'completed' && generatedImages.length > 0 && (
                 <div className="space-y-6">
                   <GeneratedImages images={generatedImages} onSelectForVideo={handleSelectForVideo} generatingVideo={generatingVideo} selectedForVideo={selectedForVideo} />
-                  {videoStatus && (
-                    <div className="flex items-center gap-3 bg-canvas border border-line rounded-xl px-4 py-3">
-                      <svg className="w-4 h-4 animate-spin flex-shrink-0 text-mid" fill="none" viewBox="0 0 24 24">
-                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                      </svg>
-                      <p className="text-sm text-mid">{videoStatus}</p>
-                    </div>
-                  )}
-                  {videoUrl && <VideoPlayer videoUrl={videoUrl} />}
+                  {videoUrl && !videoImageUrl && <VideoPlayer videoUrl={videoUrl} />}
                 </div>
               )}
             </div>
@@ -526,22 +579,11 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       </div>
 
       {/* ── Video from history results ─────────────────────── */}
-      {videoImageUrl && (videoStatus || videoUrl) && (
+      {videoImageUrl && videoUrl && (
         <section className="border-t border-line bg-surface py-10">
           <div className="max-w-4xl mx-auto px-6 space-y-4">
-            <p className="text-[11px] font-medium text-mute uppercase tracking-widest">
-              {videoUrl ? 'Video Hazır' : 'Video İşleniyor'}
-            </p>
-            {videoStatus && (
-              <div className="flex items-center gap-3 bg-canvas border border-line rounded-xl px-4 py-3">
-                <svg className="w-4 h-4 animate-spin flex-shrink-0 text-mid" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                </svg>
-                <p className="text-sm text-mid">{videoStatus}</p>
-              </div>
-            )}
-            {videoUrl && (
+            <p className="text-[11px] font-medium text-mute uppercase tracking-widest">Video Hazır</p>
+            {(
               <div className="space-y-3">
                 <VideoPlayer videoUrl={videoUrl} />
                 <button
