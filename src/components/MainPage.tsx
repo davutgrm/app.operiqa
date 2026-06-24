@@ -73,11 +73,10 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
   const [generations, setGenerations] = useState<Generation[]>(initialGenerations)
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null)
-  const [historyVideoGenId, setHistoryVideoGenId] = useState<string | null>(null)
+  const [videoFromHistory, setVideoFromHistory] = useState<{ imageUrl: string; generationId: string } | null>(null)
 
   const imagePollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const historyVideoRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
   const videoModeRef = useRef(videoMode)
 
@@ -177,9 +176,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setVideoUrl(null)
     setVideoStatus('')
     setError('')
+    setVideoFromHistory(null)
     if (imagePollingRef.current) clearTimeout(imagePollingRef.current)
     if (videoPollingRef.current) clearTimeout(videoPollingRef.current)
-    if (historyVideoRef.current) clearTimeout(historyVideoRef.current)
   }
 
   async function handleGenerate() {
@@ -295,49 +294,18 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     check()
   }
 
-  async function handleHistoryVideoGenerate(gen: Generation, imageUrl: string) {
-    const generationId = gen.id
-    setHistoryVideoGenId(generationId)
 
-    let res: Response
-    try {
-      res = await fetch('/api/generate-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl, generationId }),
-      })
-    } catch {
-      setHistoryVideoGenId(null)
-      setError('Sunucuya bağlanılamadı. Lütfen tekrar deneyin.')
-      return
-    }
-    const data = await res.json()
-    if (!res.ok) { setHistoryVideoGenId(null); setError(data.error ?? 'Video başlatılamadı.'); return }
 
-    let attempts = 0
-    const MAX_ATTEMPTS = 40
-
-    const check = async () => {
-      attempts++
-      let pollRes: Response
-      try {
-        pollRes = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}`)
-      } catch {
-        if (attempts >= MAX_ATTEMPTS) { setHistoryVideoGenId(null); setError('Video oluşturma zaman aşımına uğradı.'); return }
-        historyVideoRef.current = setTimeout(check, 12000)
-        return
-      }
-      const pollData = await pollRes.json()
-
-      if (pollData.status === 'COMPLETED') {
-        setHistoryVideoGenId(null)
-        setGenerations(prev => prev.map(g => g.id === generationId ? { ...g, video_url: pollData.videoUrl } : g))
-        return
-      }
-      if (attempts >= MAX_ATTEMPTS) { setHistoryVideoGenId(null); setError('Video oluşturma zaman aşımına uğradı. Lütfen tekrar deneyin.'); return }
-      historyVideoRef.current = setTimeout(check, 12000)
-    }
-    check()
+  function selectForHistoryVideo(gen: Generation, imageUrl: string) {
+    setSelectedHistoryId(null)
+    setHistoryOpen(false)
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setVideoFromHistory({ imageUrl, generationId: gen.id })
+    setVideoUrl(null)
+    setVideoStatus('')
+    setGeneratingVideo(false)
+    setSelectedForVideo(null)
+    setError('')
   }
 
   function handleCopyPrompt() {
@@ -370,16 +338,39 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left */}
             <div>
-              <label className="block text-[11px] font-medium text-mute mb-2 uppercase tracking-widest">Product Image</label>
-              <ImageUploader
-                onImageSelected={(file, prev) => {
-                  setImageFile(file); setImagePreview(prev); setGeneratedImages([]); setCurrentGenerationId(null)
-                  setPendingId(null); setGenStatus('idle'); setSelectedForVideo(null); setVideoUrl(null)
-                  setVideoStatus(''); setError(''); analyzeImage(file)
-                }}
-                preview={imagePreview}
-                onClear={resetSession}
-              />
+              <label className="block text-[11px] font-medium text-mute mb-2 uppercase tracking-widest">
+                {videoFromHistory ? 'Selected Image' : 'Product Image'}
+              </label>
+              {videoFromHistory ? (
+                <div className="relative rounded-2xl border border-line overflow-hidden bg-raised" style={{ minHeight: 200 }}>
+                  <img
+                    src={videoFromHistory.imageUrl}
+                    alt="Video için seçilen görsel"
+                    className="w-full h-full object-cover"
+                  />
+                  <div className="absolute top-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1 rounded-lg">
+                    Video için seçilen görsel
+                  </div>
+                  <button
+                    onClick={() => setVideoFromHistory(null)}
+                    className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/65 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/85 transition-colors"
+                  >
+                    <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ) : (
+                <ImageUploader
+                  onImageSelected={(file, prev) => {
+                    setImageFile(file); setImagePreview(prev); setGeneratedImages([]); setCurrentGenerationId(null)
+                    setPendingId(null); setGenStatus('idle'); setSelectedForVideo(null); setVideoUrl(null)
+                    setVideoStatus(''); setError(''); setVideoFromHistory(null); analyzeImage(file)
+                  }}
+                  preview={imagePreview}
+                  onClear={resetSession}
+                />
+              )}
             </div>
 
             {/* Right */}
@@ -437,20 +428,46 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 </div>
               )}
 
-              <button
-                onClick={handleGenerate} disabled={!imageFile || isGenerating || analyzingImage}
-                className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
-              >
-                {isGenerating ? (
-                  <>
-                    <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
-                      <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                      <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                    </svg>
-                    {genStatus === 'uploading' ? 'Yükleniyor...' : 'İşleniyor...'}
-                  </>
-                ) : videoMode ? 'Görsel + Video Oluştur' : 'Görselleri Oluştur'}
-              </button>
+              {videoFromHistory ? (
+                <button
+                  onClick={() => startVideoGeneration(videoFromHistory.imageUrl, videoFromHistory.generationId)}
+                  disabled={generatingVideo}
+                  className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {generatingVideo ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      Video oluşturuluyor...
+                    </>
+                  ) : (
+                    <>
+                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                      </svg>
+                      Video Oluştur
+                    </>
+                  )}
+                </button>
+              ) : (
+                <button
+                  onClick={handleGenerate} disabled={!imageFile || isGenerating || analyzingImage}
+                  className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+                >
+                  {isGenerating ? (
+                    <>
+                      <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+                        <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                        <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                      </svg>
+                      {genStatus === 'uploading' ? 'Yükleniyor...' : 'İşleniyor...'}
+                    </>
+                  ) : videoMode ? 'Görsel + Video Oluştur' : 'Görselleri Oluştur'}
+                </button>
+              )}
             </div>
           </div>
         </section>
@@ -495,6 +512,45 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
           </section>
         )}
       </div>
+
+      {/* ── Video from history results ─────────────────────── */}
+      {videoFromHistory && (videoStatus || videoUrl) && (
+        <section className="border-t border-line bg-surface py-10">
+          <div className="max-w-4xl mx-auto px-6 space-y-4">
+            <p className="text-[11px] font-medium text-mute uppercase tracking-widest">
+              {videoUrl ? 'Video Hazır' : 'Video İşleniyor'}
+            </p>
+            {videoStatus && (
+              <div className="flex items-center gap-3 bg-canvas border border-line rounded-xl px-4 py-3">
+                <svg className="w-4 h-4 animate-spin flex-shrink-0 text-mid" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                <p className="text-sm text-mid">{videoStatus}</p>
+              </div>
+            )}
+            {videoUrl && (
+              <div className="space-y-3">
+                <VideoPlayer videoUrl={videoUrl} />
+                <button
+                  onClick={() => {
+                    const link = document.createElement('a')
+                    link.href = `/api/download-video?url=${encodeURIComponent(videoUrl)}`
+                    link.download = 'operiqa-video.mp4'
+                    link.click()
+                  }}
+                  className="flex items-center justify-center gap-2 w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 hover:opacity-80 transition-opacity"
+                >
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                  </svg>
+                  Videoyu İndir
+                </button>
+              </div>
+            )}
+          </div>
+        </section>
+      )}
 
       {/* ── My Images drawer ───────────────────────────────── */}
       <div className={`fixed inset-0 z-40 ${historyOpen ? 'pointer-events-auto' : 'pointer-events-none'}`}>
@@ -552,7 +608,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                           Video
                         </div>
                       )}
-                      {historyVideoGenId === gen.id && (
+                      {videoFromHistory?.generationId === gen.id && generatingVideo && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <svg className="w-5 h-5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
@@ -625,38 +681,19 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                         İndir
                       </button>
                       <button
-                        onClick={() => handleHistoryVideoGenerate(selectedHistoryGen, url)}
-                        disabled={historyVideoGenId !== null}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-hi text-canvas text-xs font-medium rounded-lg py-2 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                        onClick={() => selectForHistoryVideo(selectedHistoryGen, url)}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-hi text-canvas text-xs font-medium rounded-lg py-2 hover:opacity-80 transition-opacity"
                       >
-                        {historyVideoGenId === selectedHistoryGen.id ? (
-                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                          </svg>
-                        ) : (
-                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                          </svg>
-                        )}
-                        {historyVideoGenId === selectedHistoryGen.id ? 'İşleniyor...' : 'Video Yap'}
+                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                        Video Yap
                       </button>
                     </div>
                   </div>
                 ))}
               </div>
-
-              {/* Video generating status */}
-              {historyVideoGenId === selectedHistoryGen.id && (
-                <div className="flex items-center gap-3 bg-surface border border-line rounded-xl px-4 py-3">
-                  <svg className="w-4 h-4 animate-spin flex-shrink-0 text-mid" fill="none" viewBox="0 0 24 24">
-                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                  </svg>
-                  <p className="text-sm text-mid">Video oluşturuluyor — 1–3 dakika sürebilir...</p>
-                </div>
-              )}
 
               {/* Video section */}
               {selectedHistoryGen.video_url && (
@@ -665,7 +702,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   <button
                     onClick={() => {
                       const link = document.createElement('a')
-                      link.href = selectedHistoryGen.video_url!
+                      link.href = `/api/download-video?url=${encodeURIComponent(selectedHistoryGen.video_url!)}`
                       link.download = 'operiqa-video.mp4'
                       link.click()
                     }}
