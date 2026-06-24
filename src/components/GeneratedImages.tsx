@@ -21,71 +21,65 @@ async function downloadImage(url: string, index: number) {
 
 export default function GeneratedImages({ images, onSelectForVideo, generatingVideo, selectedForVideo }: Props) {
   return (
-    <div>
-      <div className="flex items-center justify-between mb-3">
-        <p className="text-[11px] font-medium text-mute uppercase tracking-widest">Sonuçlar</p>
-        <span className="text-xs text-mute bg-raised border border-line rounded-full px-2.5 py-0.5">{images.length} varyant</span>
-      </div>
+    <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      {images.map((url, i) => (
+        <div
+          key={i}
+          className="group relative rounded-2xl overflow-hidden bg-raised border border-line"
+          style={{ minHeight: 400 }}
+        >
+          <img
+            src={url}
+            alt={`Varyant ${i + 1}`}
+            className="absolute inset-0 w-full h-full object-cover"
+          />
 
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-2.5">
-        {images.map((url, i) => (
-          <div
-            key={i}
-            className="group relative rounded-lg overflow-hidden bg-raised border border-line"
-            style={{ aspectRatio: '4/3' }}
-          >
-            <img src={url} alt={`Varyant ${i + 1}`} className="w-full h-full object-cover" />
+          {selectedForVideo === url && (
+            <div className="absolute top-3 left-3 bg-hi text-canvas text-[11px] font-medium px-2 py-1 rounded-lg">
+              Video seçildi
+            </div>
+          )}
 
-            {/* Dark overlay on hover */}
-            <div className="absolute inset-0 bg-black/0 group-hover:bg-black/60 transition-all duration-200" />
-
-            {/* Actions */}
-            <div className="absolute inset-0 flex items-center justify-center gap-2 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {/* Gradient + action row */}
+          <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+            <div className="h-40 bg-gradient-to-t from-black/80 to-transparent" />
+            <div className="absolute bottom-0 inset-x-0 px-4 pb-4 flex items-center gap-2">
               <button
                 onClick={() => downloadImage(url, i)}
-                title="İndir"
-                className="w-8 h-8 bg-surface/90 hover:bg-surface backdrop-blur-sm rounded-lg flex items-center justify-center transition-colors border border-line"
+                className="flex-1 flex items-center justify-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white text-xs font-medium rounded-xl py-2.5 transition-colors"
               >
-                <svg className="w-3.5 h-3.5 text-hi" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
+                İndir
               </button>
               <a
                 href={url}
                 target="_blank"
                 rel="noopener noreferrer"
                 onClick={e => e.stopPropagation()}
-                title="Tam boyut aç"
-                className="w-8 h-8 bg-surface/90 hover:bg-surface backdrop-blur-sm rounded-lg flex items-center justify-center transition-colors border border-line"
+                className="flex-1 flex items-center justify-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white text-xs font-medium rounded-xl py-2.5 transition-colors"
               >
-                <svg className="w-3.5 h-3.5 text-hi" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
+                Tam Boy
               </a>
               <button
                 onClick={() => onSelectForVideo(url)}
                 disabled={generatingVideo}
-                title="Video oluştur"
-                className="w-8 h-8 bg-surface/90 hover:bg-surface backdrop-blur-sm rounded-lg flex items-center justify-center transition-colors border border-line disabled:opacity-40"
+                className="flex-1 flex items-center justify-center gap-1.5 bg-white/15 hover:bg-white/25 backdrop-blur-sm border border-white/20 text-white text-xs font-medium rounded-xl py-2.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
               >
-                <svg className="w-3.5 h-3.5 text-hi" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
+                Video
               </button>
             </div>
-
-            {/* Selected indicator */}
-            {selectedForVideo === url && (
-              <div className="absolute top-2 left-2 rounded-md px-1.5 py-0.5 text-[10px] font-medium tracking-wide bg-hi text-canvas">
-                Video
-              </div>
-            )}
           </div>
-        ))}
-      </div>
-
-      <p className="text-xs text-mute mt-2">Görselin üzerine gelin → indirin, tam boyut açın veya video oluşturun</p>
+        </div>
+      ))}
     </div>
   )
 }
