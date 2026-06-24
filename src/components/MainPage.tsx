@@ -73,12 +73,12 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
   const [generations, setGenerations] = useState<Generation[]>(initialGenerations)
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null)
-  const [videoFromHistory, setVideoFromHistory] = useState<{ imageUrl: string; generationId: string } | null>(null)
+  const [videoImageUrl, setVideoImageUrl] = useState<string | null>(null)
+  const [videoGenId, setVideoGenId] = useState<string | null>(null)
 
   const imagePollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const resultsRef = useRef<HTMLDivElement>(null)
-  const productImageRef = useRef<HTMLDivElement>(null)
   const videoModeRef = useRef(videoMode)
 
   useEffect(() => { videoModeRef.current = videoMode }, [videoMode])
@@ -177,7 +177,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setVideoUrl(null)
     setVideoStatus('')
     setError('')
-    setVideoFromHistory(null)
+    setVideoImageUrl(null)
+    setVideoGenId(null)
     if (imagePollingRef.current) clearTimeout(imagePollingRef.current)
     if (videoPollingRef.current) clearTimeout(videoPollingRef.current)
   }
@@ -300,8 +301,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   function selectForHistoryVideo(gen: Generation, imageUrl: string) {
     setSelectedHistoryId(null)
     setHistoryOpen(false)
-    setTimeout(() => productImageRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 320)
-    setVideoFromHistory({ imageUrl, generationId: gen.id })
+    window.scrollTo({ top: 0, behavior: 'smooth' })
+    setVideoImageUrl(imageUrl)
+    setVideoGenId(gen.id)
     setPrompt('')
     setVideoUrl(null)
     setVideoStatus('')
@@ -339,14 +341,12 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left */}
-            <div ref={productImageRef}>
-              <label className="block text-[11px] font-medium text-mute mb-2 uppercase tracking-widest">
-                {videoFromHistory ? 'Selected Image' : 'Product Image'}
-              </label>
-              {videoFromHistory ? (
+            <div>
+              <label className="block text-[11px] font-medium text-mute mb-2 uppercase tracking-widest">Product Image</label>
+              {videoImageUrl ? (
                 <div className="relative rounded-2xl border border-line overflow-hidden bg-raised" style={{ minHeight: 200 }}>
                   <img
-                    src={videoFromHistory.imageUrl}
+                    src={videoImageUrl}
                     alt="Video için seçilen görsel"
                     className="w-full h-full object-cover"
                   />
@@ -354,7 +354,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                     Video için seçilen görsel
                   </div>
                   <button
-                    onClick={() => setVideoFromHistory(null)}
+                    onClick={() => { setVideoImageUrl(null); setVideoGenId(null) }}
                     className="absolute top-3 right-3 w-7 h-7 rounded-full bg-black/65 backdrop-blur-sm text-white flex items-center justify-center hover:bg-black/85 transition-colors"
                   >
                     <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -367,7 +367,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   onImageSelected={(file, prev) => {
                     setImageFile(file); setImagePreview(prev); setGeneratedImages([]); setCurrentGenerationId(null)
                     setPendingId(null); setGenStatus('idle'); setSelectedForVideo(null); setVideoUrl(null)
-                    setVideoStatus(''); setError(''); setVideoFromHistory(null); analyzeImage(file)
+                    setVideoStatus(''); setError(''); setVideoImageUrl(null); setVideoGenId(null); analyzeImage(file)
                   }}
                   preview={imagePreview}
                   onClear={resetSession}
@@ -430,9 +430,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 </div>
               )}
 
-              {videoFromHistory ? (
+              {videoImageUrl ? (
                 <button
-                  onClick={() => startVideoGeneration(videoFromHistory.imageUrl, videoFromHistory.generationId)}
+                  onClick={() => startVideoGeneration(videoImageUrl, videoGenId!)}
                   disabled={generatingVideo}
                   className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
                 >
@@ -516,7 +516,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       </div>
 
       {/* ── Video from history results ─────────────────────── */}
-      {videoFromHistory && (videoStatus || videoUrl) && (
+      {videoImageUrl && (videoStatus || videoUrl) && (
         <section className="border-t border-line bg-surface py-10">
           <div className="max-w-4xl mx-auto px-6 space-y-4">
             <p className="text-[11px] font-medium text-mute uppercase tracking-widest">
@@ -610,7 +610,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                           Video
                         </div>
                       )}
-                      {videoFromHistory?.generationId === gen.id && generatingVideo && (
+                      {videoGenId === gen.id && generatingVideo && (
                         <div className="absolute inset-0 bg-black/40 flex items-center justify-center">
                           <svg className="w-5 h-5 text-white animate-spin" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
