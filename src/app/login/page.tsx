@@ -44,10 +44,10 @@ export default function LoginPage() {
           redirect_to: 'https://app-operiqa.vercel.app/auth/reset-password',
         }),
       })
+      const data = await res.json().catch(() => ({}))
+      console.log('Reset response:', res.status, data)
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
-        const msg = data?.msg || data?.message || data?.error || `Error ${res.status}`
-        console.error('recover error:', msg)
+        const msg = (data as Record<string, string>)?.msg || (data as Record<string, string>)?.message || (data as Record<string, string>)?.error || `Error ${res.status}`
         setError(msg)
         return
       }
