@@ -101,11 +101,8 @@ export async function POST(request: NextRequest) {
     })
     console.log('[generate-images] ✓ n8n fetch TAMAMLANDI — status:', webhookRes.status, webhookRes.statusText)
   } catch (err) {
-    const error = err as Error
-    console.error('[generate-images] ✗ n8n fetch CATCH — message:', error.message)
-    console.error('[generate-images] ✗ n8n fetch CATCH — stack:', error.stack)
-    console.error('[generate-images] ✗ n8n fetch CATCH — tam hata:', err)
-    return NextResponse.json({ error: 'n8n webhook bağlantı hatası.' }, { status: 502 })
+    console.error('FETCH ERROR:', err)
+    throw err
   }
 
   if (!webhookRes.ok) {
