@@ -42,7 +42,8 @@ export async function POST(request: NextRequest) {
   if (!N8N_WEBHOOK_URL) return NextResponse.json({ error: 'N8N_WEBHOOK_URL yapılandırılmamış.' }, { status: 500 })
 
   // 1. AVIF ise fal.ai'nin desteklemediği format — JPEG'e çevir
-  const safeName = (name: string) => name.replace(/[^\x00-\x7F]/g, '_')
+  const safeName = (name: string) =>
+    name.replace(/^﻿/, '').replace(/[^\x00-\x7F]/g, '_').replace(/\s+/g, '_')
   let fileToUpload: File = new File([imageFile], safeName(imageFile.name), { type: imageFile.type })
   const isAvif = imageFile.type === 'image/avif' || imageFile.name.toLowerCase().endsWith('.avif')
   if (isAvif) {
