@@ -624,32 +624,30 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                         </svg>
                         İndir
                       </button>
-                      {!selectedHistoryGen.video_url && (
-                        <button
-                          onClick={() => handleHistoryVideoGenerate(selectedHistoryGen, url)}
-                          disabled={historyVideoGenId !== null}
-                          className="flex-1 flex items-center justify-center gap-1.5 bg-hi text-canvas text-xs font-medium rounded-lg py-2 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
-                        >
-                          {historyVideoGenId === selectedHistoryGen.id ? (
-                            <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
-                              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
-                              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
-                            </svg>
-                          ) : (
-                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                            </svg>
-                          )}
-                          {historyVideoGenId === selectedHistoryGen.id ? 'İşleniyor...' : 'Video Yap'}
-                        </button>
-                      )}
+                      <button
+                        onClick={() => handleHistoryVideoGenerate(selectedHistoryGen, url)}
+                        disabled={historyVideoGenId !== null || !!selectedHistoryGen.video_url}
+                        className="flex-1 flex items-center justify-center gap-1.5 bg-hi text-canvas text-xs font-medium rounded-lg py-2 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
+                      >
+                        {historyVideoGenId === selectedHistoryGen.id ? (
+                          <svg className="w-3.5 h-3.5 animate-spin" fill="none" viewBox="0 0 24 24">
+                            <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                            <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                          </svg>
+                        ) : (
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                        )}
+                        {historyVideoGenId === selectedHistoryGen.id ? 'İşleniyor...' : selectedHistoryGen.video_url ? 'Video Var' : 'Video Yap'}
+                      </button>
                     </div>
                   </div>
                 ))}
               </div>
 
-              {/* Video status banner */}
+              {/* Video generating status */}
               {historyVideoGenId === selectedHistoryGen.id && (
                 <div className="flex items-center gap-3 bg-surface border border-line rounded-xl px-4 py-3">
                   <svg className="w-4 h-4 animate-spin flex-shrink-0 text-mid" fill="none" viewBox="0 0 24 24">
@@ -660,9 +658,21 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 </div>
               )}
 
-              {/* Video player */}
+              {/* Video section */}
               {selectedHistoryGen.video_url && (
-                <VideoPlayer videoUrl={selectedHistoryGen.video_url} />
+                <div className="space-y-3">
+                  <VideoPlayer videoUrl={selectedHistoryGen.video_url} />
+                  <a
+                    href={selectedHistoryGen.video_url}
+                    download="operiqa-video.mp4"
+                    className="flex items-center justify-center gap-2 w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 hover:opacity-80 transition-opacity"
+                  >
+                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+                    </svg>
+                    Videoyu İndir
+                  </a>
+                </div>
               )}
             </div>
           </div>
