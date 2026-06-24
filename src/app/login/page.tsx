@@ -32,17 +32,23 @@ export default function LoginPage() {
     e.preventDefault()
     setError('')
     setLoading(true)
-    const supabase = createClient()
-    const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: `${window.location.origin}/auth/reset-password`,
-    })
-    setLoading(false)
-    if (error) {
-      console.error('Supabase resetPasswordForEmail error:', error)
-      setError(`Hata: ${error.message}`)
-      return
+    try {
+      const supabase = createClient()
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/reset-password`,
+      })
+      if (error) {
+        console.error('Supabase resetPasswordForEmail error:', error)
+        setError(error.message)
+        return
+      }
+      setResetSent(true)
+    } catch (err) {
+      console.error('resetPasswordForEmail unexpected error:', err)
+      setError('Password reset request failed. Please try again.')
+    } finally {
+      setLoading(false)
     }
-    setResetSent(true)
   }
 
   function switchView(v: 'login' | 'forgot') {
