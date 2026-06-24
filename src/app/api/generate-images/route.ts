@@ -96,10 +96,16 @@ export async function POST(request: NextRequest) {
 
   let webhookRes: Response | null = null
   try {
+    const safeBody = JSON.stringify(n8nBody, (key, value) => {
+      if (typeof value === 'string') {
+        return value.replace(/[^\x00-\x7F]/g, '')
+      }
+      return value
+    })
     webhookRes = await fetch(N8N_WEBHOOK_URL, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: Buffer.from(JSON.stringify(n8nBody), 'utf8'),
+      body: safeBody,
     })
     console.log('[generate-images] ✓ n8n fetch TAMAMLANDI — status:', webhookRes.status, webhookRes.statusText)
   } catch (err) {
