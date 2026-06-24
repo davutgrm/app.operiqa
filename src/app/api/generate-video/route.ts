@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
   }
 
   const FAL_KEY = process.env.FAL_KEY?.replace(/^﻿/, '')
-  const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL
+  const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL?.replace(/^﻿/, '')
   if (!N8N_WEBHOOK_URL) {
     return NextResponse.json({ error: 'N8N_WEBHOOK_URL yapılandırılmamış.' }, { status: 500 })
   }

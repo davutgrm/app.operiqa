@@ -36,7 +36,7 @@ export async function POST(request: NextRequest) {
   console.log('[generate-images] ✓ Form verisi alındı — dosya:', imageFile.name, imageFile.size, 'bytes')
 
   const FAL_KEY = process.env.FAL_KEY?.replace(/^﻿/, '')
-  const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL
+  const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL?.replace(/^﻿/, '')
   console.log('[generate-images] ENV — FAL_KEY mevcut:', !!FAL_KEY, '| N8N_WEBHOOK_URL:', N8N_WEBHOOK_URL ?? 'TANIMLANMAMIŞ')
   if (!FAL_KEY) return NextResponse.json({ error: 'FAL_KEY yapılandırılmamış.' }, { status: 500 })
   if (!N8N_WEBHOOK_URL) return NextResponse.json({ error: 'N8N_WEBHOOK_URL yapılandırılmamış.' }, { status: 500 })
