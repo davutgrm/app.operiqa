@@ -626,7 +626,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                       </button>
                       <button
                         onClick={() => handleHistoryVideoGenerate(selectedHistoryGen, url)}
-                        disabled={historyVideoGenId !== null || !!selectedHistoryGen.video_url}
+                        disabled={historyVideoGenId !== null}
                         className="flex-1 flex items-center justify-center gap-1.5 bg-hi text-canvas text-xs font-medium rounded-lg py-2 hover:opacity-80 transition-opacity disabled:opacity-40 disabled:cursor-not-allowed"
                       >
                         {historyVideoGenId === selectedHistoryGen.id ? (
@@ -640,7 +640,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                           </svg>
                         )}
-                        {historyVideoGenId === selectedHistoryGen.id ? 'İşleniyor...' : selectedHistoryGen.video_url ? 'Video Var' : 'Video Yap'}
+                        {historyVideoGenId === selectedHistoryGen.id ? 'İşleniyor...' : 'Video Yap'}
                       </button>
                     </div>
                   </div>
