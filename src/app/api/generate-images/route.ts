@@ -56,12 +56,13 @@ export async function POST(request: NextRequest) {
 
   // 2. Görseli fal storage'a yükle → kalıcı URL al
   console.log('[generate-images] fal upload başlıyor...')
-  const falForm = new FormData()
-  falForm.append('file', fileToUpload, safeName(fileToUpload.name))
   const falUploadRes = await fetch('https://fal.run/storage/upload', {
     method: 'POST',
-    headers: { 'Authorization': `Key ${FAL_KEY}` },
-    body: falForm,
+    headers: {
+      'Authorization': `Key ${FAL_KEY}`,
+      'Content-Type': fileToUpload.type,
+    },
+    body: fileToUpload,
   })
   if (!falUploadRes.ok) {
     const errText = await falUploadRes.text()
