@@ -50,6 +50,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [prompt, setPrompt] = useState(DEFAULT_PROMPT)
+  const [analyzingImage, setAnalyzingImage] = useState(false)
 
   const [genStatus, setGenStatus] = useState<GenStatus>('idle')
   const [pendingId, setPendingId] = useState<string | null>(null)
@@ -110,9 +111,45 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     return () => { if (imagePollingRef.current) clearTimeout(imagePollingRef.current) }
   }, [pendingId])
 
+  async function analyzeImage(file: File) {
+    setAnalyzingImage(true)
+    setPrompt('')
+    try {
+      const data = await new Promise<{ base64: string; mediaType: string }>((resolve, reject) => {
+        const reader = new FileReader()
+        reader.onload = () => {
+          const dataUrl = reader.result as string
+          const [header, base64] = dataUrl.split(',')
+          const mediaType = header.replace('data:', '').replace(';base64', '')
+          resolve({ base64, mediaType })
+        }
+        reader.onerror = reject
+        reader.readAsDataURL(file)
+      })
+
+      const res = await fetch('/api/analyze-image', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ imageBase64: data.base64, mediaType: data.mediaType }),
+      })
+      const json = await res.json()
+      if (res.ok && json.description) {
+        setPrompt(json.description)
+      } else {
+        setPrompt(DEFAULT_PROMPT)
+      }
+    } catch {
+      setPrompt(DEFAULT_PROMPT)
+    } finally {
+      setAnalyzingImage(false)
+    }
+  }
+
   function resetSession() {
     setImageFile(null)
     setImagePreview(null)
+    setPrompt(DEFAULT_PROMPT)
+    setAnalyzingImage(false)
     setGeneratedImages([])
     setCurrentGenerationId(null)
     setPendingId(null)
@@ -356,6 +393,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   setVideoUrl(null)
                   setVideoStatus('')
                   setError('')
+                  analyzeImage(file)
                 }}
                 preview={imagePreview}
                 onClear={resetSession}
@@ -369,9 +407,10 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               <textarea
                 value={prompt}
                 onChange={e => setPrompt(e.target.value)}
+                disabled={analyzingImage}
                 rows={4}
-                placeholder="Mobilyanın nasıl bir ortamda olmasını istiyorsunuz?"
-                className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-hi placeholder:text-mute resize-none outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all"
+                placeholder={analyzingImage ? 'Analyzing image...' : 'Mobilyanın nasıl bir ortamda olmasını istiyorsunuz?'}
+                className="w-full rounded-xl border border-line bg-surface px-4 py-3 text-sm text-hi placeholder:text-mute resize-none outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all disabled:opacity-60 disabled:cursor-wait"
               />
             </div>
 

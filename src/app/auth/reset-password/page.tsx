@@ -1,0 +1,158 @@
+'use client'
+
+import { useState, useEffect } from 'react'
+import { useRouter } from 'next/navigation'
+import { createClient } from '@/lib/supabase/client'
+
+export default function ResetPasswordPage() {
+  const router = useRouter()
+  const [password, setPassword] = useState('')
+  const [confirm, setConfirm] = useState('')
+  const [error, setError] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [success, setSuccess] = useState(false)
+  const [ready, setReady] = useState(false)
+  const [invalidLink, setInvalidLink] = useState(false)
+
+  useEffect(() => {
+    const hash = window.location.hash.substring(1)
+    const params = new URLSearchParams(hash)
+    const accessToken = params.get('access_token')
+    const refreshToken = params.get('refresh_token')
+    const type = params.get('type')
+
+    if (accessToken && refreshToken && type === 'recovery') {
+      const supabase = createClient()
+      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+        .then(({ error }) => {
+          if (error) {
+            setInvalidLink(true)
+          } else {
+            setReady(true)
+          }
+        })
+    } else {
+      setInvalidLink(true)
+    }
+  }, [])
+
+  async function handleSubmit(e: React.FormEvent) {
+    e.preventDefault()
+    setError('')
+
+    if (password !== confirm) {
+      setError('Şifreler eşleşmiyor.')
+      return
+    }
+    if (password.length < 6) {
+      setError('Şifre en az 6 karakter olmalıdır.')
+      return
+    }
+
+    setLoading(true)
+    const supabase = createClient()
+    const { error } = await supabase.auth.updateUser({ password })
+
+    if (error) {
+      setError('Şifre güncellenemedi. Lütfen tekrar şifre sıfırlama isteği gönderin.')
+      setLoading(false)
+      return
+    }
+
+    setSuccess(true)
+    setTimeout(() => router.push('/dashboard'), 2000)
+  }
+
+  return (
+    <div className="min-h-screen bg-canvas flex items-center justify-center px-4">
+      <div className="w-full max-w-sm">
+
+        <div className="mb-8">
+          <p className="text-sm font-semibold text-hi tracking-tight mb-6">Operiqa</p>
+          <h1 className="text-2xl font-semibold text-hi tracking-tight">Yeni Şifre Belirle</h1>
+          <p className="text-sm text-mid mt-1.5">Hesabınız için yeni şifrenizi girin.</p>
+        </div>
+
+        {success ? (
+          <div className="flex items-center gap-2.5 bg-green-50 border border-green-200 text-green-700 text-sm rounded-xl px-4 py-3">
+            <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+            </svg>
+            Şifreniz güncellendi! Yönlendiriliyorsunuz...
+          </div>
+        ) : invalidLink ? (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+              <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              Bu bağlantı geçersiz veya süresi dolmuş.
+            </div>
+            <button
+              onClick={() => router.push('/login')}
+              className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-80"
+            >
+              Giriş Sayfasına Dön
+            </button>
+          </div>
+        ) : !ready ? (
+          <div className="flex items-center gap-3 text-sm text-mid">
+            <svg className="w-4 h-4 animate-spin" fill="none" viewBox="0 0 24 24">
+              <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+              <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
+            </svg>
+            Bağlantı doğrulanıyor...
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div>
+              <label className="block text-xs font-medium text-mid mb-1.5">Yeni Şifre</label>
+              <input
+                type="password"
+                value={password}
+                onChange={e => setPassword(e.target.value)}
+                required
+                autoFocus
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-hi placeholder:text-mute outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all"
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-medium text-mid mb-1.5">Şifre Tekrar</label>
+              <input
+                type="password"
+                value={confirm}
+                onChange={e => setConfirm(e.target.value)}
+                required
+                placeholder="••••••••"
+                className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-hi placeholder:text-mute outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all"
+              />
+            </div>
+
+            {error && (
+              <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                {error}
+              </div>
+            )}
+
+            <button
+              type="submit"
+              disabled={loading}
+              className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-80 disabled:opacity-40"
+            >
+              {loading ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
+            </button>
+          </form>
+        )}
+
+        <p className="text-center text-xs text-mute mt-8">
+          © {new Date().getFullYear()} Operiqa
+        </p>
+      </div>
+    </div>
+  )
+}
