@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
 
@@ -12,6 +12,13 @@ export default function LoginPage() {
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
   const [resetSent, setResetSent] = useState(false)
+
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.hash.substring(1))
+    if (params.get('type') === 'recovery') {
+      router.replace('/auth/reset-password' + window.location.hash)
+    }
+  }, [router])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
