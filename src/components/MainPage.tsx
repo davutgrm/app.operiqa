@@ -680,7 +680,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
           {/* Drawer header */}
           <div className="flex items-center justify-between px-5 py-4 border-b border-line flex-shrink-0">
             <div className="flex items-center gap-2.5">
-              <h2 className="text-sm font-semibold text-hi">My Images</h2>
+              <h2 className="text-sm font-semibold text-hi">Mes images</h2>
               <span className="text-xs text-mute bg-raised border border-line rounded-full px-2 py-0.5">{generations.length}</span>
             </div>
             <button onClick={() => setHistoryOpen(false)} className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mid hover:text-hi hover:bg-raised transition-colors">

@@ -32,14 +32,14 @@ export default function Header({ userEmail, historyOpen, onToggleHistory }: Prop
                 : 'text-mid hover:text-hi hover:bg-raised'
             }`}
           >
-            My Images
+            Mes images
           </button>
           <div className="w-px h-4 bg-line mx-1" />
           <button
             onClick={logout}
             className="text-sm text-mid hover:text-red-500 transition-colors px-3 py-1.5 rounded-lg hover:bg-raised"
           >
-            Sign Out
+            Déconnexion
           </button>
         </div>
       </div>
