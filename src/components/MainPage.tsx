@@ -37,9 +37,9 @@ async function downloadImage(url: string, index: number) {
 function formatDate(iso: string) {
   const d = new Date(iso)
   return (
-    d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short' }) +
+    d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) +
     ' · ' +
-    d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   )
 }
 
@@ -254,14 +254,14 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       res = await fetch('/api/generate-images', { method: 'POST', body: fd })
     } catch {
       setGenStatus('idle')
-      setError('Sunucuya bağlanılamadı. Lütfen tekrar deneyin.')
+      setError('Impossible de se connecter au serveur. Veuillez réessayer.')
       return
     }
     const data = await res.json()
 
     if (!res.ok) {
       setGenStatus('idle')
-      setError(data.error ?? 'Görsel oluşturma başarısız oldu.')
+      setError(data.error ?? 'Échec de la création de l\'image.')
       return
     }
 
@@ -285,7 +285,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   async function startVideoGeneration(imageUrl: string, generationId: string) {
     setSelectedForVideo(imageUrl)
     setGeneratingVideo(true)
-    setVideoStatus('Video oluşturuluyor...')
+    setVideoStatus('Génération de la vidéo...')
     setVideoUrl(null)
 
     let res: Response
@@ -298,14 +298,14 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     } catch {
       setVideoStatus('')
       setGeneratingVideo(false)
-      setError('Sunucuya bağlanılamadı. Lütfen tekrar deneyin.')
+      setError('Impossible de se connecter au serveur. Veuillez réessayer.')
       return
     }
     const data = await res.json()
     if (!res.ok) {
       setVideoStatus('')
       setGeneratingVideo(false)
-      setError(data.error ?? 'Video başlatılamadı.')
+      setError(data.error ?? 'Impossible de démarrer la vidéo.')
       return
     }
     pollVideoStatus(generationId)
@@ -321,7 +321,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   }
 
   function pollVideoStatus(generationId: string) {
-    setVideoStatus('Video işleniyor — 1–3 dakika sürebilir...')
+    setVideoStatus('Vidéo en cours de traitement — 1 à 3 minutes...')
     let attempts = 0
     const MAX_ATTEMPTS = 40
 
@@ -331,7 +331,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       try {
         res = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}`)
       } catch {
-        if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError('Video oluşturma zaman aşımına uğradı.'); return }
+        if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError('La génération de la vidéo a expiré.'); return }
         videoPollingRef.current = setTimeout(check, 12000)
         return
       }
@@ -347,7 +347,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         return
       }
 
-      if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError('Video oluşturma zaman aşımına uğradı. Lütfen tekrar deneyin.'); return }
+      if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError('La génération de la vidéo a expiré. Veuillez réessayer.'); return }
       videoPollingRef.current = setTimeout(check, 12000)
     }
     check()
@@ -398,7 +398,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <p className="text-sm font-medium">Videonuz hazırlanıyor — birkaç dakika içinde altta görünecek</p>
+            <p className="text-sm font-medium">Votre vidéo est en cours de préparation — elle apparaîtra ci-dessous dans quelques minutes</p>
           </div>
         </div>
       )}
@@ -409,8 +409,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         <section className="max-w-4xl mx-auto px-6 pt-14 pb-12">
           <div className="mb-8 flex items-start justify-between gap-4 flex-wrap">
             <div>
-              <h1 className="text-2xl font-semibold text-hi tracking-tight">Lifestyle görsel oluştur</h1>
-              <p className="text-sm text-mid mt-1.5">Ürün fotoğrafı yükleyin, sahne tanımlayın, AI ile üretin.</p>
+              <h1 className="text-2xl font-semibold text-hi tracking-tight">Créer un visuel lifestyle</h1>
+              <p className="text-sm text-mid mt-1.5">Importez une photo produit, décrivez la scène, générez avec l'IA.</p>
             </div>
             <div className="flex items-center gap-3 text-xs text-mute bg-raised border border-line rounded-xl px-3.5 py-2.5 flex-shrink-0">
               <div className="flex items-center gap-1.5">
@@ -418,7 +418,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                 </svg>
                 <span className={imageCount >= IMAGE_LIMIT ? 'text-red-500 font-medium' : ''}>
-                  {imageCount}/{IMAGE_LIMIT} görsel
+                  {imageCount}/{IMAGE_LIMIT} images
                 </span>
               </div>
               <div className="w-px h-3 bg-line" />
@@ -428,7 +428,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
                 <span className={videoCount >= VIDEO_LIMIT ? 'text-red-500 font-medium' : ''}>
-                  {videoCount}/{VIDEO_LIMIT} video
+                  {videoCount}/{VIDEO_LIMIT} vidéos
                 </span>
               </div>
             </div>
@@ -442,11 +442,11 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 <div className="relative rounded-2xl border border-line overflow-hidden bg-raised" style={{ minHeight: 200 }}>
                   <img
                     src={videoImageUrl}
-                    alt="Video için seçilen görsel"
+                    alt="Image sélectionnée pour la vidéo"
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1 rounded-lg">
-                    Video için seçilen görsel
+                    Image sélectionnée pour la vidéo
                   </div>
                   <button
                     onClick={() => { setVideoImageUrl(null); setVideoGenId(null) }}
@@ -476,7 +476,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                       <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                       </svg>
-                      Ürününüzün arka planı şeffaf görünüyor. Daha iyi sonuç için beyaz arka planlı fotoğraf önerilir.
+                      L'arrière-plan de votre produit semble transparent. Une photo sur fond blanc est recommandée pour un meilleur résultat.
                     </div>
                   )}
                 </>
@@ -490,7 +490,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 <div>
                   <p className="text-sm font-medium text-hi">Video Mode</p>
                   <p className="text-xs text-mute mt-0.5">
-                    {videoMode ? 'Görsel üretiminin ardından otomatik video üretilir' : 'Yalnızca görsel üretilir'}
+                    {videoMode ? 'Une vidéo est générée automatiquement après l\'image' : 'Seule l\'image est générée'}
                   </p>
                 </div>
                 <button
@@ -508,13 +508,13 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   <label className="text-[11px] font-medium text-mute uppercase tracking-widest">Prompt</label>
                   {!videoImageUrl && (
                     <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => setPrompt('')} title="Temizle"
+                      <button type="button" onClick={() => setPrompt('')} title="Effacer"
                         className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                       </button>
-                      <button type="button" onClick={handleCopyPrompt} title="Kopyala"
+                      <button type="button" onClick={handleCopyPrompt} title="Copier"
                         className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
                         {copied
                           ? <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -531,7 +531,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 ) : (
                   <textarea
                     value={prompt} onChange={e => setPrompt(e.target.value)} disabled={analyzingImage} rows={6}
-                    placeholder={analyzingImage ? 'Analyzing image...' : analyzeError ? 'Sahne açıklaması yazınız' : 'Mobilyanın nasıl bir ortamda olmasını istiyorsunuz?'}
+                    placeholder={analyzingImage ? 'Analyse en cours...' : analyzeError ? 'Décrivez la scène' : 'Dans quel environnement souhaitez-vous placer le meuble ?'}
                     className="w-full flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-hi placeholder:text-mute resize-none outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all disabled:opacity-60 disabled:cursor-wait"
                   />
                 )}
@@ -553,7 +553,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                       <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Bu ay video limitinize ulaştınız.
+                      Vous avez atteint votre limite de vidéos pour ce mois.
                     </div>
                   )}
                   <button
@@ -567,7 +567,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
-                        Video oluşturuluyor...
+                        Génération de la vidéo...
                       </>
                     ) : (
                       <>
@@ -575,7 +575,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Video Oluştur
+                        Générer la vidéo
                       </>
                     )}
                   </button>
@@ -587,7 +587,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                       <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Bu ay görsel limitinize ulaştınız.
+                      Vous avez atteint votre limite d'images pour ce mois.
                     </div>
                   )}
                   <button
@@ -600,9 +600,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      {genStatus === 'uploading' ? 'Yükleniyor...' : 'İşleniyor...'}
+                      {genStatus === 'uploading' ? 'Chargement...' : 'Traitement...'}
                     </>
-                  ) : videoMode ? 'Görsel + Video Oluştur' : 'Görselleri Oluştur'}
+                  ) : videoMode ? 'Générer image + vidéo' : 'Générer les images'}
                   </button>
                 </>
               )}
@@ -617,11 +617,11 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               <div className="flex items-center justify-between mb-6">
                 <p className="text-[11px] font-medium text-mute uppercase tracking-widest">
                   {genStatus === 'pending' ? (
-                    <>İşleniyor{pollCount > 0 && <span className="font-normal normal-case tracking-normal ml-2">· {pollCount}. kontrol</span>}</>
-                  ) : 'Sonuçlar'}
+                    <>Traitement{pollCount > 0 && <span className="font-normal normal-case tracking-normal ml-2">· vérification n°{pollCount}</span>}</>
+                  ) : 'Résultats'}
                 </p>
                 {genStatus === 'completed' && generatedImages.length > 0 && (
-                  <span className="text-xs text-mute bg-raised border border-line rounded-full px-2.5 py-0.5">{generatedImages.length} varyant</span>
+                  <span className="text-xs text-mute bg-raised border border-line rounded-full px-2.5 py-0.5">{generatedImages.length} variante(s)</span>
                 )}
               </div>
 
@@ -646,7 +646,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       {videoImageUrl && videoUrl && (
         <section className="border-t border-line bg-surface py-10">
           <div className="max-w-4xl mx-auto px-6 space-y-4">
-            <p className="text-[11px] font-medium text-mute uppercase tracking-widest">Video Hazır</p>
+            <p className="text-[11px] font-medium text-mute uppercase tracking-widest">Vidéo prête</p>
             {(
               <div className="space-y-3">
                 <VideoPlayer videoUrl={videoUrl} />
@@ -662,7 +662,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                   </svg>
-                  Videoyu İndir
+                  Télécharger la vidéo
                 </button>
               </div>
             )}
@@ -699,8 +699,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
                   </svg>
                 </div>
-                <p className="text-sm font-medium text-hi mb-1">Henüz üretim yok</p>
-                <p className="text-xs text-mute">İlk görselinizi oluşturun.</p>
+                <p className="text-sm font-medium text-hi mb-1">Aucune création pour l'instant</p>
+                <p className="text-xs text-mute">Créez votre première image.</p>
               </div>
             ) : (
               <div className="grid grid-cols-2 gap-3">
@@ -739,7 +739,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                     <div className="px-3 py-2.5 bg-canvas border-t border-line">
                       <p className="text-[11px] text-mute">{formatDate(gen.created_at)}</p>
                       <p className="text-xs text-hi font-medium mt-0.5 leading-snug">
-                        {truncate(gen.prompt || 'Sahne açıklaması yok', 30)}
+                        {truncate(gen.prompt || 'Pas de description', 30)}
                       </p>
                     </div>
                   </div>
@@ -765,7 +765,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
             <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-line flex-shrink-0">
               <div className="min-w-0">
                 <p className="text-sm font-medium text-hi leading-snug line-clamp-2">
-                  {selectedHistoryGen.prompt || 'Sahne açıklaması yok'}
+                  {selectedHistoryGen.prompt || 'Pas de description'}
                 </p>
                 <p className="text-xs text-mute mt-1">{formatDate(selectedHistoryGen.created_at)}</p>
               </div>
@@ -786,7 +786,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 {selectedHistoryGen.output_image_urls.map((url, i) => (
                   <div key={i} className="flex-shrink-0 w-64 space-y-2.5">
                     <div className="rounded-xl overflow-hidden border border-line bg-raised" style={{ aspectRatio: '4/3' }}>
-                      <img src={url} alt={`Varyant ${i + 1}`} className="w-full h-full object-cover" />
+                      <img src={url} alt={`Variante ${i + 1}`} className="w-full h-full object-cover" />
                     </div>
                     <div className="flex gap-2">
                       <button
@@ -796,7 +796,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                         </svg>
-                        İndir
+                        Télécharger
                       </button>
                       <button
                         onClick={() => selectForHistoryVideo(selectedHistoryGen, url)}
@@ -806,7 +806,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Video Yap
+                        Créer vidéo
                       </button>
                     </div>
                   </div>
@@ -829,7 +829,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                     <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                       <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                     </svg>
-                    Videoyu İndir
+                    Télécharger la vidéo
                   </button>
                 </div>
               )}

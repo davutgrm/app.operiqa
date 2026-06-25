@@ -19,9 +19,9 @@ interface Props {
 function formatDate(iso: string) {
   const d = new Date(iso)
   return (
-    d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' }) +
+    d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) +
     ' · ' +
-    d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
   )
 }
 
@@ -43,12 +43,12 @@ export default function HistoryPage({ generations }: Props) {
               className="font-serif font-light text-hi"
               style={{ fontSize: '2rem', letterSpacing: '0.06em', lineHeight: 1.2 }}
             >
-              Geçmiş
+              Historique
             </h1>
-            <p className="text-sm text-low mt-2.5 tracking-wide">Tamamlanan tüm üretimler.</p>
+            <p className="text-sm text-low mt-2.5 tracking-wide">Toutes les créations terminées.</p>
           </div>
           <span className="text-[11px] text-mute rounded-full px-3 py-1 tracking-[0.10em] border border-line bg-raised">
-            {filtered.length} üretim
+            {filtered.length} création(s)
           </span>
         </div>
 
@@ -64,7 +64,7 @@ export default function HistoryPage({ generations }: Props) {
                   : 'text-low hover:text-mid border border-transparent hover:bg-raised'
               }`}
             >
-              {f === 'all' ? 'Tümü' : 'Videolu'}
+              {f === 'all' ? 'Tout' : 'Avec vidéo'}
             </button>
           ))}
         </div>
@@ -77,9 +77,9 @@ export default function HistoryPage({ generations }: Props) {
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.4} d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M7.5 8.25h.008v.008H7.5V8.25zM4.5 19.5h15a.75.75 0 00.75-.75V6.75a.75.75 0 00-.75-.75h-15a.75.75 0 00-.75.75v12a.75.75 0 00.75.75z" />
               </svg>
             </div>
-            <p className="text-sm text-low tracking-wide">Henüz üretim yok.</p>
+            <p className="text-sm text-low tracking-wide">Aucune création pour l'instant.</p>
             {filter === 'video' && (
-              <p className="text-[11px] text-mute mt-1.5 tracking-wide">Videolu üretim bulunmuyor.</p>
+              <p className="text-[11px] text-mute mt-1.5 tracking-wide">Aucune création avec vidéo.</p>
             )}
           </div>
         )}
@@ -109,12 +109,12 @@ export default function HistoryPage({ generations }: Props) {
                     <div className="absolute bottom-2.5 left-2.5 flex gap-1.5">
                       <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-md text-mid"
                         style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)' }}>
-                        {gen.output_image_urls.length} görsel
+                        {gen.output_image_urls.length} image(s)
                       </span>
                       {gen.video_url && (
                         <span className="text-[10px] font-medium tracking-wide px-2 py-0.5 rounded-md text-accent"
                           style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(8px)' }}>
-                          Video
+                          Vidéo
                         </span>
                       )}
                     </div>
@@ -122,7 +122,7 @@ export default function HistoryPage({ generations }: Props) {
                   {/* Meta */}
                   <div className="px-3.5 py-3">
                     <p className="text-[13px] text-hi font-medium truncate leading-snug tracking-wide">
-                      {gen.prompt || 'Sahne açıklaması yok'}
+                      {gen.prompt || 'Pas de description'}
                     </p>
                     <p className="text-[11px] text-mute mt-1 tracking-wide">{formatDate(gen.created_at)}</p>
                   </div>
@@ -138,7 +138,7 @@ export default function HistoryPage({ generations }: Props) {
             <div className="flex items-start justify-between gap-4">
               <div>
                 <p className="text-sm font-medium text-hi tracking-wide">
-                  {selectedGen.prompt || 'Sahne açıklaması yok'}
+                  {selectedGen.prompt || 'Pas de description'}
                 </p>
                 <p className="text-[11px] text-mute mt-1.5 tracking-wide">{formatDate(selectedGen.created_at)}</p>
               </div>
@@ -163,7 +163,7 @@ export default function HistoryPage({ generations }: Props) {
                 >
                   <img
                     src={url}
-                    alt={`Varyant ${i + 1}`}
+                    alt={`Variante ${i + 1}`}
                     className="w-full h-full object-cover group-hover:opacity-80 transition-opacity duration-300"
                   />
                   <div className="absolute inset-0 bg-black/0 group-hover:bg-black/35 transition-all duration-300" />

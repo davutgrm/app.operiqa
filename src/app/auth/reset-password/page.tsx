@@ -42,11 +42,11 @@ export default function ResetPasswordPage() {
     setError('')
 
     if (password !== confirm) {
-      setError('Şifreler eşleşmiyor.')
+      setError('Les mots de passe ne correspondent pas.')
       return
     }
     if (password.length < 6) {
-      setError('Şifre en az 6 karakter olmalıdır.')
+      setError('Le mot de passe doit comporter au moins 6 caractères.')
       return
     }
 
@@ -55,7 +55,7 @@ export default function ResetPasswordPage() {
     const { error } = await supabase.auth.updateUser({ password })
 
     if (error) {
-      setError('Şifre güncellenemedi. Lütfen tekrar şifre sıfırlama isteği gönderin.')
+      setError('Impossible de mettre à jour le mot de passe. Veuillez renvoyer une demande de réinitialisation.')
       setLoading(false)
       return
     }
@@ -70,8 +70,8 @@ export default function ResetPasswordPage() {
 
         <div className="mb-8">
           <p className="text-sm font-semibold text-hi tracking-tight mb-6">Operiqa</p>
-          <h1 className="text-2xl font-semibold text-hi tracking-tight">Yeni Şifre Belirle</h1>
-          <p className="text-sm text-mid mt-1.5">Hesabınız için yeni şifrenizi girin.</p>
+          <h1 className="text-2xl font-semibold text-hi tracking-tight">Définir un nouveau mot de passe</h1>
+          <p className="text-sm text-mid mt-1.5">Entrez votre nouveau mot de passe.</p>
         </div>
 
         {success ? (
@@ -79,7 +79,7 @@ export default function ResetPasswordPage() {
             <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
             </svg>
-            Şifreniz güncellendi! Yönlendiriliyorsunuz...
+            Mot de passe mis à jour ! Redirection en cours...
           </div>
         ) : invalidLink ? (
           <div className="space-y-4">
@@ -87,13 +87,13 @@ export default function ResetPasswordPage() {
               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
               </svg>
-              Bu bağlantı geçersiz veya süresi dolmuş.
+              Ce lien est invalide ou a expiré.
             </div>
             <button
               onClick={() => router.push('/login')}
               className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-80"
             >
-              Giriş Sayfasına Dön
+              Retour à la connexion
             </button>
           </div>
         ) : !ready ? (
@@ -102,12 +102,12 @@ export default function ResetPasswordPage() {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8H4z" />
             </svg>
-            Bağlantı doğrulanıyor...
+            Vérification du lien...
           </div>
         ) : (
           <form onSubmit={handleSubmit} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-mid mb-1.5">Yeni Şifre</label>
+              <label className="block text-xs font-medium text-mid mb-1.5">Nouveau mot de passe</label>
               <input
                 type="password"
                 value={password}
@@ -120,7 +120,7 @@ export default function ResetPasswordPage() {
             </div>
 
             <div>
-              <label className="block text-xs font-medium text-mid mb-1.5">Şifre Tekrar</label>
+              <label className="block text-xs font-medium text-mid mb-1.5">Confirmer le mot de passe</label>
               <input
                 type="password"
                 value={confirm}
@@ -145,7 +145,7 @@ export default function ResetPasswordPage() {
               disabled={loading}
               className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-80 disabled:opacity-40"
             >
-              {loading ? 'Kaydediliyor...' : 'Şifreyi Güncelle'}
+              {loading ? 'Enregistrement...' : 'Mettre à jour le mot de passe'}
             </button>
           </form>
         )}

@@ -107,14 +107,14 @@ export default function GeneratePage() {
       res = await fetch('/api/generate-images', { method: 'POST', body: fd })
     } catch {
       setGenStatus('idle')
-      setError('Sunucuya bağlanılamadı. Lütfen tekrar deneyin.')
+      setError('Impossible de se connecter au serveur. Veuillez réessayer.')
       return
     }
     const data = await res.json()
 
     if (!res.ok) {
       setGenStatus('idle')
-      setError(data.error ?? 'Görsel oluşturma başarısız oldu.')
+      setError(data.error ?? 'Échec de la création de l\'image.')
       return
     }
 
@@ -134,7 +134,7 @@ export default function GeneratePage() {
     if (!currentGenerationId) return
     setSelectedForVideo(imageUrl)
     setGeneratingVideo(true)
-    setVideoStatus('Video oluşturuluyor...')
+    setVideoStatus('Génération de la vidéo...')
     setVideoUrl(null)
 
     let res: Response
@@ -147,7 +147,7 @@ export default function GeneratePage() {
     } catch {
       setVideoStatus('')
       setGeneratingVideo(false)
-      setError('Sunucuya bağlanılamadı. Lütfen tekrar deneyin.')
+      setError('Impossible de se connecter au serveur. Veuillez réessayer.')
       return
     }
     const data = await res.json()
@@ -155,7 +155,7 @@ export default function GeneratePage() {
     if (!res.ok) {
       setVideoStatus('')
       setGeneratingVideo(false)
-      setError(data.error ?? 'Video başlatılamadı.')
+      setError(data.error ?? 'Impossible de démarrer la vidéo.')
       return
     }
 
@@ -163,7 +163,7 @@ export default function GeneratePage() {
   }
 
   function pollVideoStatus(requestId: string, generationId: string) {
-    setVideoStatus('Video işleniyor — 1–3 dakika sürebilir...')
+    setVideoStatus('Vidéo en cours de traitement — 1 à 3 minutes...')
 
     const check = async () => {
       let res: Response
@@ -186,7 +186,7 @@ export default function GeneratePage() {
       if (data.status === 'FAILED') {
         setGeneratingVideo(false)
         setVideoStatus('')
-        setError('Video oluşturma başarısız oldu.')
+        setError('Échec de la génération de la vidéo.')
         return
       }
       videoPollingRef.current = setTimeout(check, 12000)
@@ -207,10 +207,10 @@ export default function GeneratePage() {
             className="font-serif font-light text-hi"
             style={{ fontSize: '2rem', letterSpacing: '0.06em', lineHeight: 1.2 }}
           >
-            Lifestyle Görsel Oluştur
+            Créer un visuel lifestyle
           </h1>
           <p className="text-sm text-low mt-2.5 tracking-wide">
-            Ürün fotoğrafı yükleyin, sahne tanımlayın, AI ile üretin.
+            Importez une photo produit, décrivez la scène, générez avec l'IA.
           </p>
         </div>
 
@@ -220,7 +220,7 @@ export default function GeneratePage() {
           {/* Upload card */}
           <div className="card-premium luxury-card rounded-xl p-5">
             <p className="text-[10px] font-medium text-mute uppercase tracking-[0.14em] mb-4">
-              Ürün Fotoğrafı
+              Photo du produit
             </p>
             <ImageUploader
               onImageSelected={(file, preview) => {
@@ -243,13 +243,13 @@ export default function GeneratePage() {
           {/* Prompt card */}
           <div className="card-premium luxury-card rounded-xl p-5 flex flex-col">
             <p className="text-[10px] font-medium text-mute uppercase tracking-[0.14em] mb-4">
-              Sahne Açıklaması
+              Description de la scène
             </p>
             <textarea
               value={prompt}
               onChange={e => setPrompt(e.target.value)}
               rows={6}
-              placeholder="Mobilyanın nasıl bir ortamda olmasını istiyorsunuz?"
+              placeholder="Dans quel environnement souhaitez-vous placer le meuble ?"
               className="luxury-input flex-1 w-full rounded-lg px-3.5 py-3 text-sm resize-none"
             />
             <div className="mt-4 space-y-2.5">
@@ -264,13 +264,13 @@ export default function GeneratePage() {
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    {genStatus === 'uploading' ? 'Yükleniyor...' : 'İşleniyor...'}
+                    {genStatus === 'uploading' ? 'Chargement...' : 'Traitement...'}
                   </>
-                ) : 'Görselleri Oluştur'}
+                ) : 'Générer les images'}
               </button>
               {!imageFile && (
                 <p className="text-[11px] text-mute text-center tracking-wide">
-                  Önce bir ürün fotoğrafı yükleyin
+                  Veuillez d'abord importer une photo produit
                 </p>
               )}
             </div>
@@ -296,10 +296,10 @@ export default function GeneratePage() {
                 <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
               </svg>
               <div>
-                <p className="text-sm font-medium text-hi">Görseller işleniyor</p>
+                <p className="text-sm font-medium text-hi">Images en cours de traitement</p>
                 <p className="text-xs text-low mt-0.5 tracking-wide">
-                  10 saniyede bir kontrol ediliyor
-                  {pollCount > 0 && <span className="text-mute"> · {pollCount}. deneme</span>}
+                  Vérification toutes les 10 secondes
+                  {pollCount > 0 && <span className="text-mute"> · tentative n°{pollCount}</span>}
                 </p>
               </div>
             </div>

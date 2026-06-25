@@ -11,7 +11,7 @@ interface Props {
 const NAV = [
   {
     href: '/dashboard',
-    label: 'Oluştur',
+    label: 'Créer',
     icon: (
       <svg className="w-[15px] h-[15px] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6}
@@ -23,7 +23,7 @@ const NAV = [
   },
   {
     href: '/history',
-    label: 'Geçmiş',
+    label: 'Historique',
     icon: (
       <svg className="w-[15px] h-[15px] flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.6} d="M12 6v6h4.5m4.5 0a9 9 0 11-18 0 9 9 0 0118 0z" />

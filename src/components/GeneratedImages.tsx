@@ -30,13 +30,13 @@ export default function GeneratedImages({ images, onSelectForVideo, generatingVi
         >
           <img
             src={url}
-            alt={`Varyant ${i + 1}`}
+            alt={`Variante ${i + 1}`}
             className="absolute inset-0 w-full h-full object-cover"
           />
 
           {selectedForVideo === url && (
             <div className="absolute top-3 left-3 bg-hi text-canvas text-[11px] font-medium px-2 py-1 rounded-lg">
-              Video seçildi
+              Vidéo sélectionnée
             </div>
           )}
 
@@ -51,7 +51,7 @@ export default function GeneratedImages({ images, onSelectForVideo, generatingVi
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                 </svg>
-                İndir
+                Télécharger
               </button>
               <a
                 href={url}
@@ -63,7 +63,7 @@ export default function GeneratedImages({ images, onSelectForVideo, generatingVi
                 <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
                 </svg>
-                Tam Boy
+                Plein format
               </a>
               <button
                 onClick={() => onSelectForVideo(url)}
@@ -74,7 +74,7 @@ export default function GeneratedImages({ images, onSelectForVideo, generatingVi
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                 </svg>
-                Video
+                Vidéo
               </button>
             </div>
           </div>

@@ -28,7 +28,7 @@ export default function ProfilePage({ userEmail }: Props) {
           >
             Profil
           </h1>
-          <p className="text-sm text-low mt-2.5 tracking-wide">Hesap bilgileriniz.</p>
+          <p className="text-sm text-low mt-2.5 tracking-wide">Informations de votre compte.</p>
         </div>
 
         {/* Account card */}
@@ -36,7 +36,7 @@ export default function ProfilePage({ userEmail }: Props) {
 
           {/* User info */}
           <div className="px-6 py-6 border-b border-line">
-            <p className="text-[10px] font-medium text-mute uppercase tracking-[0.14em] mb-5">Hesap</p>
+            <p className="text-[10px] font-medium text-mute uppercase tracking-[0.14em] mb-5">Compte</p>
             <div className="flex items-center gap-4">
               <div className="w-11 h-11 rounded-full flex items-center justify-center flex-shrink-0 bg-accent-muted border border-accent-ring">
                 <span className="text-sm font-semibold text-accent">
@@ -45,14 +45,14 @@ export default function ProfilePage({ userEmail }: Props) {
               </div>
               <div>
                 <p className="text-sm font-medium text-hi tracking-wide">{userEmail}</p>
-                <p className="text-xs text-mute mt-0.5 tracking-wide">Üye</p>
+                <p className="text-xs text-mute mt-0.5 tracking-wide">Membre</p>
               </div>
             </div>
           </div>
 
           {/* Session */}
           <div className="px-6 py-6">
-            <p className="text-[10px] font-medium text-mute uppercase tracking-[0.14em] mb-5">Oturum</p>
+            <p className="text-[10px] font-medium text-mute uppercase tracking-[0.14em] mb-5">Session</p>
             <button
               onClick={handleLogout}
               className="btn-danger flex items-center gap-2.5 text-sm tracking-wide rounded-lg px-3.5 py-2"
@@ -60,7 +60,7 @@ export default function ProfilePage({ userEmail }: Props) {
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1" />
               </svg>
-              Çıkış Yap
+              Se déconnecter
             </button>
           </div>
 

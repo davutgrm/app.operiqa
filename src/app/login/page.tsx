@@ -27,7 +27,7 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('E-posta veya şifre hatalı.')
+      setError('Identifiant ou mot de passe incorrect.')
       setLoading(false)
       return
     }
@@ -61,7 +61,7 @@ export default function LoginPage() {
       setResetSent(true)
     } catch (err) {
       console.error('recover fetch error:', err)
-      setError('Password reset request failed. Please try again.')
+      setError('La demande de réinitialisation a échoué. Veuillez réessayer.')
     } finally {
       setLoading(false)
     }
@@ -81,13 +81,13 @@ export default function LoginPage() {
           <p className="text-sm font-semibold text-hi tracking-tight mb-6">Operiqa</p>
           {view === 'login' ? (
             <>
-              <h1 className="text-2xl font-semibold text-hi tracking-tight">Giriş Yap</h1>
-              <p className="text-sm text-mid mt-1.5">AI ile lifestyle görsel ve video üretin.</p>
+              <h1 className="text-2xl font-semibold text-hi tracking-tight">Se connecter</h1>
+              <p className="text-sm text-mid mt-1.5">Créez des visuels et vidéos lifestyle avec l'IA.</p>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-semibold text-hi tracking-tight">Şifremi Unuttum</h1>
-              <p className="text-sm text-mid mt-1.5">E-postanıza sıfırlama bağlantısı gönderelim.</p>
+              <h1 className="text-2xl font-semibold text-hi tracking-tight">Mot de passe oublié</h1>
+              <p className="text-sm text-mid mt-1.5">Nous vous enverrons un lien de réinitialisation.</p>
             </>
           )}
         </div>
@@ -95,27 +95,27 @@ export default function LoginPage() {
         {view === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-mid mb-1.5">E-posta</label>
+              <label className="block text-xs font-medium text-mid mb-1.5">E-mail</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 autoFocus
-                placeholder="ad@sirket.com"
+                placeholder="nom@entreprise.com"
                 className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-hi placeholder:text-mute outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-mid">Şifre</label>
+                <label className="block text-xs font-medium text-mid">Mot de passe</label>
                 <button
                   type="button"
                   onClick={() => switchView('forgot')}
                   className="text-xs text-mid hover:text-hi transition-colors"
                 >
-                  Şifremi unuttum
+                  Mot de passe oublié
                 </button>
               </div>
               <input
@@ -142,7 +142,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-80 disabled:opacity-40"
             >
-              {loading ? 'Giriş yapılıyor...' : 'Giriş Yap'}
+              {loading ? 'Connexion en cours...' : 'Se connecter'}
             </button>
           </form>
         ) : resetSent ? (
@@ -151,27 +151,27 @@ export default function LoginPage() {
               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Sıfırlama bağlantısı e-postanıza gönderildi.
+              Lien de réinitialisation envoyé à votre adresse e-mail.
             </div>
             <button
               type="button"
               onClick={() => switchView('login')}
               className="w-full border border-line text-hi text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-70"
             >
-              Giriş sayfasına dön
+              Retour à la connexion
             </button>
           </div>
         ) : (
           <form onSubmit={handleForgot} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-mid mb-1.5">E-posta</label>
+              <label className="block text-xs font-medium text-mid mb-1.5">E-mail</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 autoFocus
-                placeholder="ad@sirket.com"
+                placeholder="nom@entreprise.com"
                 className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-hi placeholder:text-mute outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all"
               />
             </div>
@@ -190,7 +190,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-80 disabled:opacity-40"
             >
-              {loading ? 'Gönderiliyor...' : 'Sıfırlama Bağlantısı Gönder'}
+              {loading ? 'Envoi en cours...' : 'Envoyer le lien de réinitialisation'}
             </button>
 
             <button
@@ -198,7 +198,7 @@ export default function LoginPage() {
               onClick={() => switchView('login')}
               className="w-full text-sm text-mid hover:text-hi transition-colors py-1"
             >
-              ← Geri dön
+              ← Retour
             </button>
           </form>
         )}

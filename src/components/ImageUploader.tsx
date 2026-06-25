@@ -49,12 +49,12 @@ export default function ImageUploader({ onImageSelected, preview, onClear }: Pro
           className="relative rounded-lg overflow-hidden border border-line bg-raised"
           style={{ aspectRatio: '4/3' }}
         >
-          <img src={preview} alt="Ürün fotoğrafı" className="w-full h-full object-contain" />
+          <img src={preview} alt="Photo du produit" className="w-full h-full object-contain" />
           <button
             onClick={handleClear}
             className="absolute top-2 right-2 text-xs text-mid hover:text-hi bg-canvas/80 hover:bg-raised border border-line rounded-md px-2.5 py-1 transition-colors backdrop-blur-sm"
           >
-            Değiştir
+            Changer
           </button>
         </div>
         {resWarn && (
@@ -63,7 +63,7 @@ export default function ImageUploader({ onImageSelected, preview, onClear }: Pro
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
             </svg>
             <p className="text-xs text-amber-700 leading-snug">
-              Düşük çözünürlük ({resWarn.w}×{resWarn.h} px). Min. {MIN_WIDTH}×{MIN_HEIGHT} px önerilir — çıktı bulanık olabilir.
+              Résolution faible ({resWarn.w}×{resWarn.h} px). Min. {MIN_WIDTH}×{MIN_HEIGHT} px recommandé — le résultat peut être flou.
             </p>
           </div>
         )}
@@ -98,9 +98,9 @@ export default function ImageUploader({ onImageSelected, preview, onClear }: Pro
         </div>
         <div className="text-center">
           <p className={`text-sm font-medium transition-colors ${isDragActive ? 'text-accent-hover' : 'text-mid'}`}>
-            {isDragActive ? 'Bırakın...' : 'Sürükleyin veya tıklayın'}
+            {isDragActive ? 'Déposez...' : 'Glissez ou cliquez'}
           </p>
-          <p className="text-xs text-mute mt-1">JPG, PNG, WEBP, AVIF · Maks. 10 MB · Min. {MIN_WIDTH}×{MIN_HEIGHT} px</p>
+          <p className="text-xs text-mute mt-1">JPG, PNG, WEBP, AVIF · Max. 10 Mo · Min. {MIN_WIDTH}×{MIN_HEIGHT} px</p>
         </div>
       </div>
 

@@ -17,9 +17,9 @@ interface Props {
 
 function formatDate(iso: string) {
   const d = new Date(iso)
-  return d.toLocaleDateString('tr-TR', { day: 'numeric', month: 'short', year: 'numeric' })
+  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
     + ' · '
-    + d.toLocaleTimeString('tr-TR', { hour: '2-digit', minute: '2-digit' })
+    + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
 }
 
 export default function HistoryGallery({ generations }: Props) {
@@ -33,7 +33,7 @@ export default function HistoryGallery({ generations }: Props) {
 
       {/* Section header */}
       <div className="flex items-center gap-3 pb-4 border-b border-line mb-1">
-        <h2 className="text-sm font-semibold text-hi">Geçmiş</h2>
+        <h2 className="text-sm font-semibold text-hi">Historique</h2>
         <span className="text-[11px] font-medium text-mute bg-raised border border-line rounded-full px-2 py-0.5">
           {completed.length}
         </span>
@@ -69,11 +69,11 @@ export default function HistoryGallery({ generations }: Props) {
               <div className="flex items-center gap-2 flex-shrink-0">
                 {gen.video_url && (
                   <span className="text-[10px] font-medium text-accent bg-accent-muted border border-accent-ring rounded-full px-2 py-0.5">
-                    Video
+                    Vidéo
                   </span>
                 )}
                 <span className="text-[10px] font-medium text-emerald-400 bg-emerald-950/50 border border-emerald-900/50 rounded-full px-2 py-0.5">
-                  {gen.output_image_urls.length} görsel
+                  {gen.output_image_urls.length} image(s)
                 </span>
                 <svg
                   className={`w-4 h-4 text-mute group-hover:text-low transition-all ${expanded === gen.id ? 'rotate-180' : ''}`}
@@ -97,7 +97,7 @@ export default function HistoryGallery({ generations }: Props) {
                       className="group relative rounded-lg overflow-hidden bg-raised border border-line hover:border-line-mid transition-colors"
                       style={{ aspectRatio: '4/3' }}
                     >
-                      <img src={url} alt={`Varyant ${i + 1}`} className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
+                      <img src={url} alt={`Variante ${i + 1}`} className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
                     </a>
                   ))}
                 </div>
