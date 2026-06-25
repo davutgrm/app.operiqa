@@ -15,22 +15,23 @@ export default function ResetPasswordPage() {
   const [invalidLink, setInvalidLink] = useState(false)
 
   useEffect(() => {
-    const hash = window.location.hash.substring(1)
-    const params = new URLSearchParams(hash)
-    const accessToken = params.get('access_token')
-    const refreshToken = params.get('refresh_token')
-    const type = params.get('type')
+    const supabase = createClient()
+
+    // Implicit flow: #access_token=...&type=recovery
+    const hashParams = new URLSearchParams(window.location.hash.substring(1))
+    const accessToken = hashParams.get('access_token')
+    const refreshToken = hashParams.get('refresh_token')
+    const type = hashParams.get('type')
+
+    // PKCE flow: ?code=...
+    const code = new URLSearchParams(window.location.search).get('code')
 
     if (accessToken && refreshToken && type === 'recovery') {
-      const supabase = createClient()
       supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ error }) => {
-          if (error) {
-            setInvalidLink(true)
-          } else {
-            setReady(true)
-          }
-        })
+        .then(({ error }) => { error ? setInvalidLink(true) : setReady(true) })
+    } else if (code) {
+      supabase.auth.exchangeCodeForSession(code)
+        .then(({ error }) => { error ? setInvalidLink(true) : setReady(true) })
     } else {
       setInvalidLink(true)
     }
