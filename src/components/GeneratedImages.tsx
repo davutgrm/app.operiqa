@@ -40,8 +40,8 @@ export default function GeneratedImages({ images, onSelectForVideo, generatingVi
             </div>
           )}
 
-          {/* Gradient + action row */}
-          <div className="absolute inset-0 flex flex-col justify-end opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+          {/* Gradient + action row — always visible on mobile, hover on desktop */}
+          <div className="absolute inset-0 flex flex-col justify-end opacity-100 sm:opacity-0 sm:group-hover:opacity-100 transition-opacity duration-200">
             <div className="h-40 bg-gradient-to-t from-black/80 to-transparent" />
             <div className="absolute bottom-0 inset-x-0 px-4 pb-4 flex items-center gap-2">
               <button
