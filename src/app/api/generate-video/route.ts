@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { fal } from '@fal-ai/client'
 import sharp from 'sharp'
 import { VIDEO_LIMIT } from '../usage/route'
+import { getUsageSince } from '@/lib/supabase/usageSince'
 
 export async function POST(request: NextRequest) {
   console.log('[generate-video] ▶ FONKSİYON ÇAĞRILDI', new Date().toISOString())
@@ -13,14 +14,14 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Monthly video limit check
-  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
+  // Video limit check (since last reset or month start)
+  const since = await getUsageSince(supabase, user.id)
   const { count: videoCount } = await supabase
     .from('generations')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
     .not('video_url', 'is', null)
-    .gte('created_at', monthStart.toISOString())
+    .gte('created_at', since)
   if ((videoCount ?? 0) >= VIDEO_LIMIT) {
     return NextResponse.json({ error: 'Bu ay video limitinize ulaştınız.' }, { status: 429 })
   }

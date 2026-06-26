@@ -1,22 +1,16 @@
 import { NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
+import { getUsageSince } from '@/lib/supabase/usageSince'
 
 export const IMAGE_LIMIT = 100
 export const VIDEO_LIMIT = 30
-
-function monthStart() {
-  const d = new Date()
-  d.setDate(1)
-  d.setHours(0, 0, 0, 0)
-  return d.toISOString()
-}
 
 export async function GET() {
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  const since = monthStart()
+  const since = await getUsageSince(supabase, user.id)
 
   const [{ count: imageCount }, { count: videoCount }] = await Promise.all([
     supabase

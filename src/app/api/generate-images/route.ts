@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import { fal } from '@fal-ai/client'
 import sharp from 'sharp'
 import { IMAGE_LIMIT } from '../usage/route'
+import { getUsageSince } from '@/lib/supabase/usageSince'
 
 export async function POST(request: NextRequest) {
   console.log('[generate-images] ▶ FONKSİYON ÇAĞRILDI', new Date().toISOString())
@@ -15,13 +16,13 @@ export async function POST(request: NextRequest) {
   }
   console.log('[generate-images] ✓ Kullanıcı doğrulandı:', user.id)
 
-  // Monthly image limit check
-  const monthStart = new Date(); monthStart.setDate(1); monthStart.setHours(0, 0, 0, 0)
+  // Image limit check (since last reset or month start)
+  const since = await getUsageSince(supabase, user.id)
   const { count: imageCount } = await supabase
     .from('generations')
     .select('*', { count: 'exact', head: true })
     .eq('user_id', user.id)
-    .gte('created_at', monthStart.toISOString())
+    .gte('created_at', since)
   if ((imageCount ?? 0) >= IMAGE_LIMIT) {
     return NextResponse.json({ error: 'Bu ay görsel limitinize ulaştınız.' }, { status: 429 })
   }
