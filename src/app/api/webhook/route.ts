@@ -11,22 +11,27 @@ const PRICE_CREDITS: Record<string, number> = {
 async function addCredits(userId: string, amount: number) {
   const supabase = createServiceClient()
 
-  await supabase
+  // Ensure row exists (3 is overridden if row already exists due to ignoreDuplicates)
+  const { error: upsertError } = await supabase
     .from('user_credits')
     .upsert({ user_id: userId, credits: 0 }, { onConflict: 'user_id', ignoreDuplicates: true })
+  if (upsertError) throw new Error(`upsert failed: ${upsertError.message}`)
 
-  const { data } = await supabase
+  const { data, error: selectError } = await supabase
     .from('user_credits')
     .select('credits')
     .eq('user_id', userId)
     .single()
+  if (selectError) throw new Error(`select failed: ${selectError.message}`)
 
-  await supabase
+  const newTotal = (data?.credits ?? 0) + amount
+  const { error: updateError } = await supabase
     .from('user_credits')
-    .update({ credits: (data?.credits ?? 0) + amount, updated_at: new Date().toISOString() })
+    .update({ credits: newTotal })
     .eq('user_id', userId)
+  if (updateError) throw new Error(`update failed: ${updateError.message}`)
 
-  console.log(`[webhook] ✓ Added ${amount} credits to user ${userId}, new total: ${(data?.credits ?? 0) + amount}`)
+  console.log(`[webhook] ✓ Added ${amount} credits to user ${userId}, new total: ${newTotal}`)
 }
 
 export async function POST(request: NextRequest) {
@@ -49,12 +54,15 @@ export async function POST(request: NextRequest) {
     // First payment when subscription is created
     if (event.type === 'checkout.session.completed') {
       const session = event.data.object as Stripe.Checkout.Session
-      if (session.payment_status === 'paid') {
+      console.log('[webhook] checkout.session.completed — payment_status:', session.payment_status, '| metadata:', JSON.stringify(session.metadata))
+
+      // 'paid' for normal subscriptions; 'no_payment_required' for trialing plans
+      if (session.payment_status === 'paid' || session.payment_status === 'no_payment_required') {
         const userId = session.metadata?.user_id
         const credits = parseInt(session.metadata?.credits ?? '0', 10)
-        if (userId && credits > 0) {
-          await addCredits(userId, credits)
-        }
+        if (!userId) throw new Error(`Missing user_id in session metadata (session: ${session.id})`)
+        if (credits <= 0) throw new Error(`Invalid credits value in session metadata: ${session.metadata?.credits}`)
+        await addCredits(userId, credits)
       }
     }
 
