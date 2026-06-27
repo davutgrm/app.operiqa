@@ -45,11 +45,11 @@ export async function POST(request: NextRequest) {
 
   if (!sig) return NextResponse.json({ error: 'No signature' }, { status: 400 })
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY?.trim()!)
 
   let event: Stripe.Event
   try {
-    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET!)
+    event = stripe.webhooks.constructEvent(body, sig, process.env.STRIPE_WEBHOOK_SECRET?.trim()!)
   } catch (err) {
     console.error('[webhook] Signature verification failed:', err)
     return NextResponse.json({ error: 'Invalid signature' }, { status: 400 })
