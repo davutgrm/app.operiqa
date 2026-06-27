@@ -10,11 +10,12 @@ const PRICE_CREDITS: Record<string, number> = {
 
 async function addCredits(userId: string, amount: number) {
   const supabase = createServiceClient()
+  console.log(`[webhook] addCredits START — userId: ${userId}, amount: ${amount}`)
 
-  // Ensure row exists (3 is overridden if row already exists due to ignoreDuplicates)
   const { error: upsertError } = await supabase
     .from('user_credits')
     .upsert({ user_id: userId, credits: 0 }, { onConflict: 'user_id', ignoreDuplicates: true })
+  console.log('[webhook] upsert result — error:', upsertError?.message ?? 'none')
   if (upsertError) throw new Error(`upsert failed: ${upsertError.message}`)
 
   const { data, error: selectError } = await supabase
@@ -22,16 +23,20 @@ async function addCredits(userId: string, amount: number) {
     .select('credits')
     .eq('user_id', userId)
     .single()
+  console.log('[webhook] select result — data:', JSON.stringify(data), '| error:', selectError?.message ?? 'none')
   if (selectError) throw new Error(`select failed: ${selectError.message}`)
 
-  const newTotal = (data?.credits ?? 0) + amount
-  const { error: updateError } = await supabase
+  const currentCredits = data?.credits ?? 0
+  const newTotal = currentCredits + amount
+  const { data: updateData, error: updateError } = await supabase
     .from('user_credits')
     .update({ credits: newTotal })
     .eq('user_id', userId)
+    .select()
+  console.log('[webhook] update result — data:', JSON.stringify(updateData), '| error:', updateError?.message ?? 'none')
   if (updateError) throw new Error(`update failed: ${updateError.message}`)
 
-  console.log(`[webhook] ✓ Added ${amount} credits to user ${userId}, new total: ${newTotal}`)
+  console.log(`[webhook] ✓ DONE — user: ${userId}, was: ${currentCredits}, added: ${amount}, now: ${newTotal}`)
 }
 
 export async function POST(request: NextRequest) {
