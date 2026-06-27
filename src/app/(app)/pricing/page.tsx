@@ -1,6 +1,7 @@
 import Stripe from 'stripe'
 import Link from 'next/link'
 import PlanCard, { type Plan } from '@/components/PlanCard'
+import ThemeToggle from '@/components/ThemeToggle'
 
 const PLANS = [
   { name: 'Warm Up',  priceId: 'price_1TmusJ92bdtsK7lGsJPoGT5G', credits: 100,  popular: false },
@@ -32,9 +33,12 @@ export default async function PricingPage() {
       <header className="fixed top-0 inset-x-0 z-50 h-14 border-b border-line bg-canvas/95 backdrop-blur-sm">
         <div className="max-w-4xl mx-auto h-full px-6 flex items-center justify-between">
           <span className="text-xl font-bold text-hi tracking-wide">Operiqa</span>
-          <Link href="/dashboard" className="text-sm text-mid hover:text-hi transition-colors">
-            ← Dashboard
-          </Link>
+          <div className="flex items-center gap-2">
+            <ThemeToggle />
+            <Link href="/dashboard" className="text-sm text-mid border border-line rounded-lg px-3 py-1.5 hover:text-hi hover:border-hi transition-colors">
+              ← Dashboard
+            </Link>
+          </div>
         </div>
       </header>
 

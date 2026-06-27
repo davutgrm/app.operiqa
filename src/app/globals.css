@@ -1,6 +1,6 @@
 @import "tailwindcss";
 
-@theme inline {
+@theme {
   --font-sans: var(--font-inter);
 
   --color-accent:       #111111;
@@ -25,6 +25,29 @@
   --color-mute: #A3A3A3;
 }
 
+.dark {
+  --color-accent:       #E5E5E5;
+  --color-accent-hover: #FFFFFF;
+  --color-accent-dim:   #A3A3A3;
+  --color-accent-muted: rgba(255, 255, 255, 0.06);
+  --color-accent-ring:  rgba(255, 255, 255, 0.12);
+
+  --color-canvas:  #0A0A0A;
+  --color-surface: #111111;
+  --color-raised:  #1A1A1A;
+  --color-overlay: #222222;
+  --color-subtle:  #2A2A2A;
+
+  --color-line:       #252525;
+  --color-line-mid:   #383838;
+  --color-line-heavy: #555555;
+
+  --color-hi:   #F0F0F0;
+  --color-mid:  #9A9A9A;
+  --color-low:  #6B6B6B;
+  --color-mute: #4A4A4A;
+}
+
 *, *::before, *::after { box-sizing: border-box; }
 
 body {
@@ -42,4 +65,8 @@ body {
   background: linear-gradient(90deg, #F0F0F0 25%, #E8E8E8 50%, #F0F0F0 75%);
   background-size: 800px 100%;
   animation: shimmer 1.6s infinite;
+}
+.dark .skeleton {
+  background: linear-gradient(90deg, #1A1A1A 25%, #222222 50%, #1A1A1A 75%);
+  background-size: 800px 100%;
 }

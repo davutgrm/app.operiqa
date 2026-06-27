@@ -3,6 +3,7 @@
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import ThemeToggle from './ThemeToggle'
 
 interface Props {
   userEmail: string
@@ -26,6 +27,9 @@ export default function Header({ userEmail, historyOpen, onToggleHistory, credit
         <span className="text-xl font-bold text-hi tracking-wide">Operiqa</span>
 
         <div className="flex items-center gap-2">
+          {/* Theme toggle */}
+          <ThemeToggle />
+
           {/* Credits badge */}
           <div className="flex items-center gap-1.5 bg-transparent border border-line rounded-lg px-2.5 py-1.5">
             <svg className="w-3.5 h-3.5 text-amber-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
