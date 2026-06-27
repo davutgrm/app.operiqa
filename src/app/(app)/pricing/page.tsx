@@ -3,9 +3,9 @@ import Link from 'next/link'
 import PlanCard, { type Plan } from '@/components/PlanCard'
 
 const PLANS = [
-  { name: 'Warm Up',  priceId: 'price_1TmnWu9setBh8QuDkKtkoGEd', credits: 100,  popular: false },
-  { name: 'Collector', priceId: 'price_1TmnXb9setBh8QuDksZh6sUW', credits: 300,  popular: true  },
-  { name: 'Retail',   priceId: 'price_1TmnY89setBh8QuD6KJrbkSX', credits: 1500, popular: false },
+  { name: 'Warm Up',  priceId: 'price_1TmoxO92bdtsK7lGofNZTpjZ', credits: 100,  popular: false },
+  { name: 'Collector', priceId: 'price_1TmoxO92bdtsK7lGZOLYRCoU', credits: 300,  popular: true  },
+  { name: 'Retail',   priceId: 'price_1TmoxT92bdtsK7lGklwelknu', credits: 1500, popular: false },
 ]
 
 export default async function PricingPage() {
