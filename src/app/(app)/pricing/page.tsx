@@ -9,17 +9,23 @@ const PLANS = [
 ]
 
 export default async function PricingPage() {
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const clean = (v: string | undefined) => v?.trim().replace(/^﻿/, '') ?? ''
+  const stripe = new Stripe(clean(process.env.STRIPE_SECRET_KEY))
 
-  const stripeprices = await Promise.all(
-    PLANS.map(p => stripe.prices.retrieve(p.priceId))
-  )
-
-  const plans: Plan[] = PLANS.map((p, i) => ({
-    ...p,
-    amount: stripeprices[i].unit_amount ?? 0,
-    currency: stripeprices[i].currency ?? 'eur',
-  }))
+  let plans: Plan[]
+  try {
+    const stripeprices = await Promise.all(
+      PLANS.map(p => stripe.prices.retrieve(p.priceId))
+    )
+    plans = PLANS.map((p, i) => ({
+      ...p,
+      amount: stripeprices[i].unit_amount ?? 0,
+      currency: stripeprices[i].currency ?? 'eur',
+    }))
+  } catch (err) {
+    console.error('[pricing] Stripe prices fetch failed:', err)
+    plans = PLANS.map(p => ({ ...p, amount: 0, currency: 'eur' }))
+  }
 
   return (
     <div className="min-h-screen bg-canvas">

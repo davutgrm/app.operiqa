@@ -15,11 +15,13 @@ export default function PlanCard({ plan }: { plan: Plan }) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const price = new Intl.NumberFormat('fr-FR', {
-    style: 'currency',
-    currency: plan.currency.toUpperCase(),
-    minimumFractionDigits: 0,
-  }).format(plan.amount / 100)
+  const price = plan.amount > 0
+    ? new Intl.NumberFormat('fr-FR', {
+        style: 'currency',
+        currency: plan.currency.toUpperCase(),
+        minimumFractionDigits: 0,
+      }).format(plan.amount / 100)
+    : '—'
 
   async function handleSubscribe() {
     setLoading(true)
