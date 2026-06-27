@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fal } from '@fal-ai/client'
 import sharp from 'sharp'
-import { VIDEO_LIMIT } from '../usage/route'
-import { getUsageSince } from '@/lib/supabase/usageSince'
 
 export async function POST(request: NextRequest) {
   console.log('[generate-video] ▶ FONKSİYON ÇAĞRILDI', new Date().toISOString())
@@ -14,17 +12,29 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  // Video limit check (since last reset or month start)
-  const since = await getUsageSince(supabase, user.id)
-  const { count: videoCount } = await supabase
-    .from('generations')
-    .select('*', { count: 'exact', head: true })
+  // Credit check (video costs 5 credits)
+  const { data: creditRow } = await supabase
+    .from('user_credits')
+    .select('credits')
     .eq('user_id', user.id)
-    .not('video_url', 'is', null)
-    .gte('created_at', since)
-  if ((videoCount ?? 0) >= VIDEO_LIMIT) {
-    return NextResponse.json({ error: 'Bu ay video limitinize ulaştınız.' }, { status: 429 })
+    .maybeSingle()
+
+  if (!creditRow || creditRow.credits < 5) {
+    return NextResponse.json({ error: 'Krediniz bitti. Video için 5 kredi gereklidir.' }, { status: 429 })
   }
+
+  // Deduct 5 credits atomically
+  const { data: updatedCredits } = await supabase
+    .from('user_credits')
+    .update({ credits: creditRow.credits - 5 })
+    .eq('user_id', user.id)
+    .gte('credits', 5)
+    .select('credits')
+
+  if (!updatedCredits || updatedCredits.length === 0) {
+    return NextResponse.json({ error: 'Krediniz bitti. Video için 5 kredi gereklidir.' }, { status: 429 })
+  }
+  console.log('[generate-video] ✓ 5 kredi düşürüldü, kalan:', updatedCredits[0].credits)
 
   let { imageUrl, generationId } = await request.json()
   if (!imageUrl || !generationId) {

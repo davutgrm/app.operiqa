@@ -75,10 +75,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   const [videoImageUrl, setVideoImageUrl] = useState<string | null>(null)
   const [videoGenId, setVideoGenId] = useState<string | null>(null)
 
-  const [imageCount, setImageCount] = useState(0)
-  const [videoCount, setVideoCount] = useState(0)
-  const IMAGE_LIMIT = 100
-  const VIDEO_LIMIT = 30
+  const [credits, setCredits] = useState<number | null>(null)
 
   const imagePollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const videoPollingRef = useRef<ReturnType<typeof setTimeout> | null>(null)
@@ -87,17 +84,16 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
   useEffect(() => { videoModeRef.current = videoMode }, [videoMode])
 
-  async function fetchUsage() {
+  async function fetchCredits() {
     try {
-      const res = await fetch('/api/usage')
+      const res = await fetch('/api/credits')
       if (!res.ok) return
       const data = await res.json()
-      setImageCount(data.imageCount ?? 0)
-      setVideoCount(data.videoCount ?? 0)
+      setCredits(data.credits ?? 0)
     } catch {}
   }
 
-  useEffect(() => { fetchUsage() }, [])
+  useEffect(() => { fetchCredits() }, [])
 
   // Layered Escape: modal first, then drawer
   useEffect(() => {
@@ -138,7 +134,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         setCurrentGenerationId(genId)
         setPendingId(null)
         setGenerations(prev => [data.generation, ...prev.filter((g: Generation) => g.id !== pendingId)])
-        fetchUsage()
+        fetchCredits()
         setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
         if (videoModeRef.current && urls.length > 0) startVideoGeneration(urls[0], genId!)
         return
@@ -272,7 +268,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       setGeneratedImages(urls)
       setCurrentGenerationId(genId)
       setGenerations(prev => [data.generation, ...prev.filter((g: Generation) => g.id !== genId)])
-      fetchUsage()
+      fetchCredits()
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
       if (videoMode && urls.length > 0) startVideoGeneration(urls[0], genId)
       return
@@ -342,7 +338,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         setVideoStatus('')
         setVideoUrl(data.videoUrl)
         setGenerations(prev => prev.map(g => g.id === generationId ? { ...g, video_url: data.videoUrl } : g))
-        fetchUsage()
+        fetchCredits()
         setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 200)
         return
       }
@@ -378,8 +374,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   }
 
   const isGenerating = genStatus === 'uploading' || genStatus === 'pending'
-  const imageAtLimit = imageCount >= IMAGE_LIMIT
-  const videoAtLimit = videoCount >= VIDEO_LIMIT
+  const outOfCredits = credits !== null && credits < 1
+  const notEnoughCreditsForVideo = credits !== null && credits < 5
   const selectedHistoryGen = generations.find(g => g.id === selectedHistoryId) ?? null
 
   return (
@@ -412,25 +408,17 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               <h1 className="text-2xl font-semibold text-hi tracking-tight">Créer un visuel lifestyle</h1>
               <p className="text-sm text-mid mt-1.5">Importez une photo produit, décrivez la scène, générez avec l'IA.</p>
             </div>
-            <div className="flex items-center gap-3 text-xs text-mute bg-raised border border-line rounded-xl px-3.5 py-2.5 flex-shrink-0">
-              <div className="flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
-                </svg>
-                <span className={imageCount >= IMAGE_LIMIT ? 'text-red-500 font-medium' : ''}>
-                  {imageCount}/{IMAGE_LIMIT} images
+            <div className="flex items-center gap-2 text-xs text-mute bg-raised border border-line rounded-xl px-3.5 py-2.5 flex-shrink-0">
+              <svg className="w-3.5 h-3.5 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+              </svg>
+              {credits === null ? (
+                <span className="text-mute">...</span>
+              ) : (
+                <span className={credits === 0 ? 'text-red-500 font-medium' : ''}>
+                  {credits} kredi kaldı
                 </span>
-              </div>
-              <div className="w-px h-3 bg-line" />
-              <div className="flex items-center gap-1.5">
-                <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span className={videoCount >= VIDEO_LIMIT ? 'text-red-500 font-medium' : ''}>
-                  {videoCount}/{VIDEO_LIMIT} vidéos
-                </span>
-              </div>
+              )}
             </div>
           </div>
 
@@ -548,17 +536,17 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
               {videoImageUrl ? (
                 <>
-                  {videoAtLimit && (
+                  {notEnoughCreditsForVideo && (
                     <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
                       <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Vous avez atteint votre limite de vidéos pour ce mois.
+                      Krediniz bitti. Video için 5 kredi gereklidir.
                     </div>
                   )}
                   <button
                     onClick={() => startVideoGeneration(videoImageUrl, videoGenId!)}
-                    disabled={generatingVideo || videoAtLimit}
+                    disabled={generatingVideo || notEnoughCreditsForVideo}
                     className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                     {generatingVideo ? (
@@ -582,16 +570,16 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 </>
               ) : (
                 <>
-                  {imageAtLimit && (
+                  {outOfCredits && (
                     <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
                       <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Vous avez atteint votre limite d'images pour ce mois.
+                      Krediniz bitti.
                     </div>
                   )}
                   <button
-                    onClick={handleGenerate} disabled={!imageFile || isGenerating || analyzingImage || imageAtLimit}
+                    onClick={handleGenerate} disabled={!imageFile || isGenerating || analyzingImage || outOfCredits}
                     className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
                   >
                   {isGenerating ? (

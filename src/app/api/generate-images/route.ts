@@ -2,8 +2,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@/lib/supabase/server'
 import { fal } from '@fal-ai/client'
 import sharp from 'sharp'
-import { IMAGE_LIMIT } from '../usage/route'
-import { getUsageSince } from '@/lib/supabase/usageSince'
 
 export async function POST(request: NextRequest) {
   console.log('[generate-images] ▶ FONKSİYON ÇAĞRILDI', new Date().toISOString())
@@ -16,15 +14,15 @@ export async function POST(request: NextRequest) {
   }
   console.log('[generate-images] ✓ Kullanıcı doğrulandı:', user.id)
 
-  // Image limit check (since last reset or month start)
-  const since = await getUsageSince(supabase, user.id)
-  const { count: imageCount } = await supabase
-    .from('generations')
-    .select('*', { count: 'exact', head: true })
+  // Credit check
+  const { data: creditRow } = await supabase
+    .from('user_credits')
+    .select('credits')
     .eq('user_id', user.id)
-    .gte('created_at', since)
-  if ((imageCount ?? 0) >= IMAGE_LIMIT) {
-    return NextResponse.json({ error: 'Bu ay görsel limitinize ulaştınız.' }, { status: 429 })
+    .maybeSingle()
+
+  if (!creditRow || creditRow.credits < 1) {
+    return NextResponse.json({ error: 'Krediniz bitti.' }, { status: 429 })
   }
 
   const formData = await request.formData()
@@ -73,6 +71,20 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: dbError?.message ?? 'DB hatası.' }, { status: 500 })
   }
   console.log('[generate-images] ✓ DB kaydı oluşturuldu, generation.id:', generation.id)
+
+  // Deduct 1 credit atomically (safe guard: gte ensures no negative balance on race)
+  const { data: updatedCredits } = await supabase
+    .from('user_credits')
+    .update({ credits: creditRow.credits - 1 })
+    .eq('user_id', user.id)
+    .gte('credits', 1)
+    .select('credits')
+
+  if (!updatedCredits || updatedCredits.length === 0) {
+    await supabase.from('generations').delete().eq('id', generation.id)
+    return NextResponse.json({ error: 'Krediniz bitti.' }, { status: 429 })
+  }
+  console.log('[generate-images] ✓ Kredi düşürüldü, kalan:', updatedCredits[0].credits)
 
   // 3. n8n'e gönder — n8n arka planda işler, Supabase'i doğrudan günceller
   let enrichedPrompt =
