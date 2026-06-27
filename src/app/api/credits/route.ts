@@ -6,10 +6,10 @@ export async function GET() {
   const { data: { user } } = await supabase.auth.getUser()
   if (!user) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
 
-  // Initialize with 3 credits if no row exists yet
+  // Initialize with 6 credits if no row exists yet
   await supabase
     .from('user_credits')
-    .upsert({ user_id: user.id, credits: 3 }, { onConflict: 'user_id', ignoreDuplicates: true })
+    .upsert({ user_id: user.id, credits: 6 }, { onConflict: 'user_id', ignoreDuplicates: true })
 
   const { data } = await supabase
     .from('user_credits')
