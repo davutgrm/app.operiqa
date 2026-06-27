@@ -10,10 +10,20 @@ const PLANS = [
 
 export default async function PricingPage() {
   const clean = (v: string | undefined) => v?.trim().replace(/^﻿/, '') ?? ''
-  const stripe = new Stripe(clean(process.env.STRIPE_SECRET_KEY))
+  const rawKey = process.env.STRIPE_SECRET_KEY ?? ''
+  const key = clean(rawKey)
+  console.log('[pricing] KEY raw length:', rawKey.length, '| cleaned length:', key.length)
+  console.log('[pricing] KEY first 20 chars:', key.substring(0, 20))
+  console.log('[pricing] KEY char codes [0-3]:', [...key.substring(0, 4)].map(c => c.charCodeAt(0)))
+
+  const stripe = new Stripe(key)
 
   let plans: Plan[]
   try {
+    console.log('[pricing] Fetching price_1TmoxT92bdtsK7lGklwelknu...')
+    const testPrice = await stripe.prices.retrieve('price_1TmoxT92bdtsK7lGklwelknu')
+    console.log('[pricing] price_1TmoxT result:', testPrice.id, testPrice.unit_amount, testPrice.currency)
+
     const stripeprices = await Promise.all(
       PLANS.map(p => stripe.prices.retrieve(p.priceId))
     )
@@ -23,7 +33,7 @@ export default async function PricingPage() {
       currency: stripeprices[i].currency ?? 'eur',
     }))
   } catch (err) {
-    console.error('[pricing] Stripe prices fetch failed:', err)
+    console.error('[pricing] Stripe fetch failed:', err)
     plans = PLANS.map(p => ({ ...p, amount: 0, currency: 'eur' }))
   }
 
