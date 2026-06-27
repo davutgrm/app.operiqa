@@ -72,24 +72,18 @@ export default function PlanCard({ plan }: { plan: Plan }) {
       </div>
 
       <ul className="space-y-2.5 text-sm text-mid flex-1">
-        <li className="flex items-center gap-2">
-          <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-          {plan.credits.toLocaleString('fr-FR')} images lifestyle
-        </li>
-        <li className="flex items-center gap-2">
-          <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-          {Math.floor(plan.credits / 5).toLocaleString('fr-FR')} vidéos
-        </li>
-        <li className="flex items-center gap-2">
-          <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
-          </svg>
-          Renouvellement mensuel automatique
-        </li>
+        {[
+          `${plan.credits.toLocaleString('fr-FR')} crédits/mois`,
+          '4 visuels par génération',
+          'Vidéos lifestyle incluses',
+        ].map(feature => (
+          <li key={feature} className="flex items-center gap-2">
+            <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+            </svg>
+            {feature}
+          </li>
+        ))}
       </ul>
 
       {error && <p className="text-xs text-red-500">{error}</p>}
