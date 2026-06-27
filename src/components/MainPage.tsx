@@ -514,7 +514,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 </div>
                 {videoImageUrl ? (
                   <div className="flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-mute select-none" style={{ minHeight: 120 }}>
-                    Slow cinematic camera drift around a modern living room, soft natural light filtering through sheer curtains, highlighting the texture of the sofa and wooden coffee table, photorealistic
+                    Subtle camera movement, product stays centered and in focus throughout. Soft natural lighting, photorealistic lifestyle scene. The furniture product is the main subject at all times.
                   </div>
                 ) : (
                   <textarea
