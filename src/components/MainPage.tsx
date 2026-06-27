@@ -537,11 +537,13 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               {videoImageUrl ? (
                 <>
                   {notEnoughCreditsForVideo && (
-                    <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                      <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Krediniz bitti. Video için 5 kredi gereklidir.
+                      <span>Krediniz bitti. Video için 5 kredi gereklidir.{' '}
+                        <a href="/pricing" className="underline font-medium">Kredi satın al →</a>
+                      </span>
                     </div>
                   )}
                   <button
@@ -571,11 +573,13 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               ) : (
                 <>
                   {outOfCredits && (
-                    <div className="flex items-center gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
-                      <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <div className="flex items-start gap-2.5 bg-red-50 border border-red-200 text-red-600 text-sm rounded-xl px-4 py-3">
+                      <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      Krediniz bitti.
+                      <span>Krediniz bitti.{' '}
+                        <a href="/pricing" className="underline font-medium">Kredi satın al →</a>
+                      </span>
                     </div>
                   )}
                   <button

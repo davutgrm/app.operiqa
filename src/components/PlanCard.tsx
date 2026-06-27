@@ -1,0 +1,108 @@
+'use client'
+
+import { useState } from 'react'
+
+export interface Plan {
+  name: string
+  priceId: string
+  credits: number
+  amount: number
+  currency: string
+  popular: boolean
+}
+
+export default function PlanCard({ plan }: { plan: Plan }) {
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState('')
+
+  const price = new Intl.NumberFormat('fr-FR', {
+    style: 'currency',
+    currency: plan.currency.toUpperCase(),
+    minimumFractionDigits: 0,
+  }).format(plan.amount / 100)
+
+  async function handleSubscribe() {
+    setLoading(true)
+    setError('')
+    try {
+      const res = await fetch('/api/checkout', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ priceId: plan.priceId }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        setError(data.error ?? 'Une erreur est survenue.')
+        return
+      }
+      window.location.href = data.url
+    } catch {
+      setError('Une erreur est survenue.')
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className={`relative rounded-2xl border bg-canvas p-6 flex flex-col gap-5 transition-shadow hover:shadow-md ${
+      plan.popular ? 'border-hi shadow-sm' : 'border-line'
+    }`}>
+      {plan.popular && (
+        <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-hi text-canvas text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
+          Populaire
+        </div>
+      )}
+
+      <div>
+        <p className="text-xs font-medium text-mute uppercase tracking-widest">{plan.name}</p>
+        <p className="mt-2">
+          <span className="text-3xl font-bold text-hi">{price}</span>
+          <span className="text-sm text-mute ml-1">/mois</span>
+        </p>
+      </div>
+
+      <div className="flex items-center gap-2 bg-raised border border-line rounded-xl px-3.5 py-2.5">
+        <svg className="w-4 h-4 text-mute flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span className="text-sm font-semibold text-hi">{plan.credits.toLocaleString('fr-FR')} crédits</span>
+        <span className="text-xs text-mute">/mois</span>
+      </div>
+
+      <ul className="space-y-2.5 text-sm text-mid flex-1">
+        <li className="flex items-center gap-2">
+          <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+          {plan.credits.toLocaleString('fr-FR')} images lifestyle
+        </li>
+        <li className="flex items-center gap-2">
+          <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+          {Math.floor(plan.credits / 5).toLocaleString('fr-FR')} vidéos
+        </li>
+        <li className="flex items-center gap-2">
+          <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2.5} d="M5 13l4 4L19 7" />
+          </svg>
+          Renouvellement mensuel automatique
+        </li>
+      </ul>
+
+      {error && <p className="text-xs text-red-500">{error}</p>}
+
+      <button
+        onClick={handleSubscribe}
+        disabled={loading}
+        className={`w-full text-sm font-medium rounded-xl py-3 transition-opacity hover:opacity-80 disabled:opacity-40 ${
+          plan.popular
+            ? 'bg-hi text-canvas'
+            : 'border border-line text-hi bg-canvas hover:bg-raised'
+        }`}
+      >
+        {loading ? 'Redirection...' : "S'abonner"}
+      </button>
+    </div>
+  )
+}
