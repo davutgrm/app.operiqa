@@ -3,27 +3,17 @@ import Link from 'next/link'
 import PlanCard, { type Plan } from '@/components/PlanCard'
 
 const PLANS = [
-  { name: 'Warm Up',  priceId: 'price_1TmoxO92bdtsK7lGofNZTpjZ', credits: 100,  popular: false },
-  { name: 'Collector', priceId: 'price_1TmoxO92bdtsK7lGZOLYRCoU', credits: 300,  popular: true  },
-  { name: 'Retail',   priceId: 'price_1TmoxT92bdtsK7lGklwelknu', credits: 1500, popular: false },
+  { name: 'Warm Up',  priceId: 'price_1TmusJ92bdtsK7lGsJPoGT5G', credits: 100,  popular: false },
+  { name: 'Collector', priceId: 'price_1Tmusd92bdtsK7lGonE6PdQz', credits: 300,  popular: true  },
+  { name: 'Retail',   priceId: 'price_1Tmusw92bdtsK7lGDFHvwwMR', credits: 1500, popular: false },
 ]
 
 export default async function PricingPage() {
   const clean = (v: string | undefined) => v?.trim().replace(/^﻿/, '') ?? ''
-  const rawKey = process.env.STRIPE_SECRET_KEY ?? ''
-  const key = clean(rawKey)
-  console.log('[pricing] KEY raw length:', rawKey.length, '| cleaned length:', key.length)
-  console.log('[pricing] KEY first 20 chars:', key.substring(0, 20))
-  console.log('[pricing] KEY char codes [0-3]:', [...key.substring(0, 4)].map(c => c.charCodeAt(0)))
-
-  const stripe = new Stripe(key)
+  const stripe = new Stripe(clean(process.env.STRIPE_SECRET_KEY))
 
   let plans: Plan[]
   try {
-    console.log('[pricing] Fetching price_1TmoxT92bdtsK7lGklwelknu...')
-    const testPrice = await stripe.prices.retrieve('price_1TmoxT92bdtsK7lGklwelknu')
-    console.log('[pricing] price_1TmoxT result:', testPrice.id, testPrice.unit_amount, testPrice.currency)
-
     const stripeprices = await Promise.all(
       PLANS.map(p => stripe.prices.retrieve(p.priceId))
     )

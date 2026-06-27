@@ -3,9 +3,9 @@ import Stripe from 'stripe'
 import { createServiceClient } from '@/lib/supabase/service'
 
 const PRICE_CREDITS: Record<string, number> = {
-  'price_1TmoxO92bdtsK7lGofNZTpjZ': 100,
-  'price_1TmoxO92bdtsK7lGZOLYRCoU': 300,
-  'price_1TmoxT92bdtsK7lGklwelknu': 1500,
+  'price_1TmusJ92bdtsK7lGsJPoGT5G': 100,
+  'price_1Tmusd92bdtsK7lGonE6PdQz': 300,
+  'price_1Tmusw92bdtsK7lGDFHvwwMR': 1500,
 }
 
 async function addCredits(userId: string, amount: number) {
