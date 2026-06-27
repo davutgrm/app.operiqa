@@ -526,7 +526,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 </div>
                 {videoImageUrl ? (
                   <div className="flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-mute select-none" style={{ minHeight: 120 }}>
-                    Camera is moving around the product slowly
+                    Smooth camera movement around the room, showcasing the furniture from different angles
                   </div>
                 ) : (
                   <textarea
