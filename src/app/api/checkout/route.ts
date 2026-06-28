@@ -18,26 +18,32 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Invalid price ID' }, { status: 400 })
   }
 
-  const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!)
+  const clean = (v: string | undefined) => v?.trim().replace(/^﻿/, '') ?? ''
+  const stripe = new Stripe(clean(process.env.STRIPE_SECRET_KEY))
   const origin = request.nextUrl.origin
 
-  const session = await stripe.checkout.sessions.create({
-    mode: 'subscription',
-    line_items: [{ price: priceId, quantity: 1 }],
-    customer_email: user.email,
-    metadata: {
-      user_id: user.id,
-      credits: String(PRICE_CREDITS[priceId]),
-    },
-    subscription_data: {
+  try {
+    const session = await stripe.checkout.sessions.create({
+      mode: 'subscription',
+      line_items: [{ price: priceId, quantity: 1 }],
+      customer_email: user.email,
       metadata: {
         user_id: user.id,
-        price_id: priceId,
+        credits: String(PRICE_CREDITS[priceId]),
       },
-    },
-    success_url: `${origin}/dashboard?subscribed=true`,
-    cancel_url: `${origin}/pricing`,
-  })
-
-  return NextResponse.json({ url: session.url })
+      subscription_data: {
+        metadata: {
+          user_id: user.id,
+          price_id: priceId,
+        },
+      },
+      success_url: `${origin}/dashboard?subscribed=true`,
+      cancel_url: `${origin}/pricing`,
+    })
+    return NextResponse.json({ url: session.url })
+  } catch (err) {
+    const message = err instanceof Error ? err.message : 'Stripe error'
+    console.error('[checkout] Stripe error:', message)
+    return NextResponse.json({ error: message }, { status: 500 })
+  }
 }
