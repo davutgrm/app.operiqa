@@ -17,24 +17,27 @@ export default function ResetPasswordPage() {
   useEffect(() => {
     const supabase = createClient()
 
-    // Implicit flow: #access_token=...&type=recovery
-    const hashParams = new URLSearchParams(window.location.hash.substring(1))
-    const accessToken = hashParams.get('access_token')
-    const refreshToken = hashParams.get('refresh_token')
-    const type = hashParams.get('type')
+    // PKCE flow: code already exchanged server-side via /auth/callback, session in cookie
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session) {
+        setReady(true)
+        return
+      }
 
-    // PKCE flow: ?code=...
-    const code = new URLSearchParams(window.location.search).get('code')
+      // Implicit flow fallback: #access_token=...&type=recovery
+      const hashParams = new URLSearchParams(window.location.hash.substring(1))
+      const accessToken = hashParams.get('access_token')
+      const refreshToken = hashParams.get('refresh_token')
+      const type = hashParams.get('type')
 
-    if (accessToken && refreshToken && type === 'recovery') {
-      supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
-        .then(({ error }) => { error ? setInvalidLink(true) : setReady(true) })
-    } else if (code) {
-      supabase.auth.exchangeCodeForSession(code)
-        .then(({ error }) => { error ? setInvalidLink(true) : setReady(true) })
-    } else {
+      if (accessToken && refreshToken && type === 'recovery') {
+        supabase.auth.setSession({ access_token: accessToken, refresh_token: refreshToken })
+          .then(({ error }) => { error ? setInvalidLink(true) : setReady(true) })
+        return
+      }
+
       setInvalidLink(true)
-    }
+    })
   }, [])
 
   async function handleSubmit(e: React.FormEvent) {

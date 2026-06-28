@@ -40,27 +40,16 @@ export default function LoginPage() {
     setError('')
     setLoading(true)
     try {
-      const res = await fetch('https://ycxqpundxpsmcprshkmh.supabase.co/auth/v1/recover', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'apikey': process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-        },
-        body: JSON.stringify({
-          email,
-          redirect_to: 'https://app-operiqa.vercel.app/auth/reset-password',
-        }),
+      const supabase = createClient()
+      const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
       })
-      const data = await res.json().catch(() => ({}))
-      console.log('Reset response:', res.status, data)
-      if (!res.ok) {
-        const msg = (data as Record<string, string>)?.msg || (data as Record<string, string>)?.message || (data as Record<string, string>)?.error || `Error ${res.status}`
-        setError(msg)
+      if (resetError) {
+        setError('La demande de réinitialisation a échoué. Veuillez réessayer.')
         return
       }
       setResetSent(true)
-    } catch (err) {
-      console.error('recover fetch error:', err)
+    } catch {
       setError('La demande de réinitialisation a échoué. Veuillez réessayer.')
     } finally {
       setLoading(false)
