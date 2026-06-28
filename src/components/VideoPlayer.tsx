@@ -6,8 +6,15 @@ interface Props {
 
 export default function VideoPlayer({ videoUrl }: Props) {
   return (
-    <div className="rounded-xl overflow-hidden bg-black aspect-[9/16]">
-      <video src={videoUrl} controls autoPlay loop className="w-full h-full object-cover" />
+    <div className="w-full rounded-2xl overflow-hidden bg-black">
+      <video
+        src={videoUrl}
+        controls
+        loop
+        playsInline
+        preload="metadata"
+        style={{ display: 'block', width: '100%', height: 'auto' }}
+      />
     </div>
   )
 }
