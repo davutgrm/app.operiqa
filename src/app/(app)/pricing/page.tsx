@@ -4,13 +4,13 @@ import PlanCard, { type Plan } from '@/components/PlanCard'
 import ThemeToggle from '@/components/ThemeToggle'
 
 const PLANS = [
-  { name: 'Warm Up',  priceId: 'price_1TnP0192bdtsK7lGl7QSFB4N', credits: 100,  popular: false },
+  { name: 'Warm Up',  priceId: 'price_1TnP0192bdtsK7lGI7QSFB4N', credits: 100,  popular: false },
   { name: 'Collector', priceId: 'price_1TnP0M92bdtsK7lG4a4rMQqr', credits: 300,  popular: true  },
   { name: 'Retail',   priceId: 'price_1TnP0f92bdtsK7lGutK7PY0B', credits: 1500, popular: false },
 ]
 
 const FALLBACK_AMOUNTS: Record<string, number> = {
-  'price_1TnP0192bdtsK7lGl7QSFB4N': 30000,
+  'price_1TnP0192bdtsK7lGI7QSFB4N': 30000,
   'price_1TnP0M92bdtsK7lG4a4rMQqr': 50000,
   'price_1TnP0f92bdtsK7lGutK7PY0B': 100000,
 }

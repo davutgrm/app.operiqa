@@ -3,7 +3,7 @@ import { createClient } from '@/lib/supabase/server'
 import Stripe from 'stripe'
 
 const PRICE_CREDITS: Record<string, number> = {
-  'price_1TnP0192bdtsK7lGl7QSFB4N': 100,
+  'price_1TnP0192bdtsK7lGI7QSFB4N': 100,
   'price_1TnP0M92bdtsK7lG4a4rMQqr': 300,
   'price_1TnP0f92bdtsK7lGutK7PY0B': 1500,
 }
