@@ -9,6 +9,12 @@ const PLANS = [
   { name: 'Retail',   priceId: 'price_1TnP0f92bdtsK7lGutK7PY0B', credits: 1500, popular: false },
 ]
 
+const FALLBACK_AMOUNTS: Record<string, number> = {
+  'price_1TnP0192bdtsK7lGl7QSFB4N': 30000,
+  'price_1TnP0M92bdtsK7lG4a4rMQqr': 50000,
+  'price_1TnP0f92bdtsK7lGutK7PY0B': 100000,
+}
+
 export default async function PricingPage() {
   const clean = (v: string | undefined) => v?.trim().replace(/^﻿/, '') ?? ''
   const stripe = new Stripe(clean(process.env.STRIPE_SECRET_KEY))
@@ -20,12 +26,12 @@ export default async function PricingPage() {
     )
     plans = PLANS.map((p, i) => ({
       ...p,
-      amount: stripeprices[i].unit_amount ?? 0,
+      amount: stripeprices[i].unit_amount || FALLBACK_AMOUNTS[p.priceId],
       currency: stripeprices[i].currency ?? 'eur',
     }))
   } catch (err) {
     console.error('[pricing] Stripe fetch failed:', err)
-    plans = PLANS.map(p => ({ ...p, amount: 0, currency: 'eur' }))
+    plans = PLANS.map(p => ({ ...p, amount: FALLBACK_AMOUNTS[p.priceId], currency: 'eur' }))
   }
 
   return (
