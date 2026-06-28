@@ -27,7 +27,7 @@ export async function proxy(request: NextRequest) {
 
   const { pathname } = request.nextUrl
 
-  const PUBLIC_PATHS = ['/login', '/api/webhook']
+  const PUBLIC_PATHS = ['/login', '/api/webhook', '/api/n8n-callback', '/api/video-callback']
   if (!user && !PUBLIC_PATHS.includes(pathname)) {
     return NextResponse.redirect(new URL('/login', request.url))
   }

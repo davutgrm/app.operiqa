@@ -12,6 +12,25 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
+  let { imageUrl, generationId, imageIndex } = await request.json()
+  if (!imageUrl || !generationId || imageIndex === undefined) {
+    return NextResponse.json({ error: 'Missing imageUrl, generationId or imageIndex' }, { status: 400 })
+  }
+
+  // Check if this specific image already has a video
+  const { data: existingGen } = await supabase
+    .from('generations')
+    .select('video_urls')
+    .eq('id', generationId)
+    .eq('user_id', user.id)
+    .maybeSingle()
+
+  const videoUrls = (existingGen?.video_urls as Record<string, string>) ?? {}
+  if (videoUrls[String(imageIndex)]) {
+    console.log('[generate-video] ✓ Vidéo déjà créée pour image', imageIndex, 'de la generation', generationId)
+    return NextResponse.json({ status: 'ALREADY_EXISTS', videoUrl: videoUrls[String(imageIndex)] })
+  }
+
   // Credit check (video costs 5 credits)
   const { data: creditRow } = await supabase
     .from('user_credits')
@@ -35,11 +54,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ error: 'Krediniz bitti. Video için 5 kredi gereklidir.' }, { status: 429 })
   }
   console.log('[generate-video] ✓ 5 kredi düşürüldü, kalan:', updatedCredits[0].credits)
-
-  let { imageUrl, generationId } = await request.json()
-  if (!imageUrl || !generationId) {
-    return NextResponse.json({ error: 'Missing imageUrl or generationId' }, { status: 400 })
-  }
 
   const FAL_KEY = process.env.FAL_KEY?.replace(/^﻿/, '')
   const N8N_WEBHOOK_URL = process.env.N8N_WEBHOOK_URL?.replace(/^﻿/, '')
@@ -69,6 +83,7 @@ export async function POST(request: NextRequest) {
     action: 'video',
     image_url: imageUrl,
     generation_id: generationId,
+    image_index: imageIndex,
   }
 
   console.log('[generate-video] ▶ n8n fetch BAŞLIYOR:', JSON.stringify(n8nBody))
@@ -93,5 +108,5 @@ export async function POST(request: NextRequest) {
   }
 
   console.log('[generate-video] ✓ Tamamlandı, pending döndürülüyor')
-  return NextResponse.json({ generationId, status: 'pending' })
+  return NextResponse.json({ generationId, imageIndex, status: 'pending' })
 }

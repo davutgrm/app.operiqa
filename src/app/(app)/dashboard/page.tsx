@@ -6,6 +6,7 @@ interface Generation {
   input_image_url: string
   output_image_urls: string[]
   video_url: string | null
+  video_urls: Record<string, string>
   prompt: string
   created_at: string
 }

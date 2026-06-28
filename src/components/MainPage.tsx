@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import Header from './Header'
 import ImageUploader from './ImageUploader'
 import GeneratedImages from './GeneratedImages'
@@ -13,6 +14,7 @@ interface Generation {
   input_image_url: string
   output_image_urls: string[]
   video_url: string | null
+  video_urls: Record<string, string>
   prompt: string
   created_at: string
 }
@@ -74,6 +76,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   const [selectedHistoryId, setSelectedHistoryId] = useState<string | null>(null)
   const [videoImageUrl, setVideoImageUrl] = useState<string | null>(null)
   const [videoGenId, setVideoGenId] = useState<string | null>(null)
+  const [videoImageIndex, setVideoImageIndex] = useState<number | null>(null)
 
   const [credits, setCredits] = useState<number | null>(null)
 
@@ -90,6 +93,20 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       if (!res.ok) return
       const data = await res.json()
       setCredits(data.credits ?? 0)
+    } catch {}
+  }
+
+  async function fetchGenerations() {
+    try {
+      const supabase = createClient()
+      const { data } = await supabase
+        .from('generations')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(50)
+      if (data) {
+        setGenerations(data.filter((g: Generation) => Array.isArray(g.output_image_urls) && g.output_image_urls.length > 0))
+      }
     } catch {}
   }
 
@@ -136,7 +153,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         setGenerations(prev => [data.generation, ...prev.filter((g: Generation) => g.id !== pendingId)])
         fetchCredits()
         setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-        if (videoModeRef.current && urls.length > 0) startVideoGeneration(urls[0], genId!)
+        if (videoModeRef.current && urls.length > 0) startVideoGeneration(urls[0], genId!, 0)
         return
       }
 
@@ -270,7 +287,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       setGenerations(prev => [data.generation, ...prev.filter((g: Generation) => g.id !== genId)])
       fetchCredits()
       setTimeout(() => resultsRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' }), 100)
-      if (videoMode && urls.length > 0) startVideoGeneration(urls[0], genId)
+      if (videoMode && urls.length > 0) startVideoGeneration(urls[0], genId, 0)
       return
     }
 
@@ -278,7 +295,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     setPendingId(data.generation.id)
   }
 
-  async function startVideoGeneration(imageUrl: string, generationId: string) {
+  async function startVideoGeneration(imageUrl: string, generationId: string, imageIndex: number) {
     setSelectedForVideo(imageUrl)
     setGeneratingVideo(true)
     setVideoStatus('Génération de la vidéo...')
@@ -289,7 +306,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       res = await fetch('/api/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl, generationId }),
+        body: JSON.stringify({ imageUrl, generationId, imageIndex }),
       })
     } catch {
       setVideoStatus('')
@@ -304,19 +321,30 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       setError(data.error ?? 'Impossible de démarrer la vidéo.')
       return
     }
-    pollVideoStatus(generationId)
+    if (data.status === 'ALREADY_EXISTS') {
+      setGeneratingVideo(false)
+      setVideoStatus('')
+      setVideoUrl(data.videoUrl)
+      setGenerations(prev => prev.map(g => g.id === generationId ? {
+        ...g,
+        video_urls: { ...(g.video_urls ?? {}), [String(imageIndex)]: data.videoUrl },
+      } : g))
+      return
+    }
+    pollVideoStatus(generationId, imageIndex)
   }
 
-  function handleSelectForVideo(imageUrl: string) {
+  function handleSelectForVideo(imageUrl: string, imageIndex: number) {
     if (!currentGenerationId) return
     setVideoImageUrl(imageUrl)
+    setVideoImageIndex(imageIndex)
     setVideoGenId(currentGenerationId)
     setVideoMode(true)
     setPrompt('')
     window.scrollTo({ top: 0, behavior: 'smooth' })
   }
 
-  function pollVideoStatus(generationId: string) {
+  function pollVideoStatus(generationId: string, imageIndex: number) {
     setVideoStatus('Vidéo en cours de traitement — 1 à 3 minutes...')
     let attempts = 0
     const MAX_ATTEMPTS = 40
@@ -325,7 +353,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       attempts++
       let res: Response
       try {
-        res = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}`)
+        res = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}&imageIndex=${imageIndex}`)
       } catch {
         if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError('La génération de la vidéo a expiré.'); return }
         videoPollingRef.current = setTimeout(check, 12000)
@@ -337,8 +365,12 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         setGeneratingVideo(false)
         setVideoStatus('')
         setVideoUrl(data.videoUrl)
-        setGenerations(prev => prev.map(g => g.id === generationId ? { ...g, video_url: data.videoUrl } : g))
+        setGenerations(prev => prev.map(g => g.id === generationId ? {
+          ...g,
+          video_urls: { ...(g.video_urls ?? {}), [String(imageIndex)]: data.videoUrl },
+        } : g))
         fetchCredits()
+        fetchGenerations()
         setTimeout(() => window.scrollTo({ top: document.body.scrollHeight, behavior: 'smooth' }), 200)
         return
       }
@@ -351,15 +383,16 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
 
 
-  function selectForHistoryVideo(gen: Generation, imageUrl: string) {
+  function selectForHistoryVideo(gen: Generation, imageUrl: string, imageIndex: number) {
     setSelectedHistoryId(null)
     setHistoryOpen(false)
     window.scrollTo({ top: 0, behavior: 'smooth' })
     setVideoImageUrl(imageUrl)
+    setVideoImageIndex(imageIndex)
     setVideoGenId(gen.id)
     setVideoMode(true)
     setPrompt('')
-    setVideoUrl(null)
+    setVideoUrl(gen.video_urls?.[String(imageIndex)] ?? null)
     setVideoStatus('')
     setGeneratingVideo(false)
     setSelectedForVideo(null)
@@ -534,9 +567,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                     </div>
                   )}
                   <button
-                    onClick={() => startVideoGeneration(videoImageUrl, videoGenId!)}
-                    disabled={generatingVideo || notEnoughCreditsForVideo}
-                    className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-30 disabled:cursor-not-allowed"
+                    onClick={() => !videoUrl && startVideoGeneration(videoImageUrl, videoGenId!, videoImageIndex ?? 0)}
+                    disabled={generatingVideo || notEnoughCreditsForVideo || !!videoUrl}
+                    className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 flex items-center justify-center gap-2 transition-opacity hover:opacity-80 disabled:opacity-50 disabled:cursor-not-allowed"
                   >
                     {generatingVideo ? (
                       <>
@@ -545,6 +578,13 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
                         Génération de la vidéo...
+                      </>
+                    ) : videoUrl ? (
+                      <>
+                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                        </svg>
+                        Vidéo déjà créée
                       </>
                     ) : (
                       <>
@@ -697,7 +737,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                         className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                       />
                       <div className="absolute inset-0 bg-black/0 group-hover:bg-black/15 transition-all duration-300" />
-                      {gen.video_url && (
+                      {(gen.video_url || Object.keys(gen.video_urls ?? {}).length > 0) && (
                         <div className="absolute top-2 right-2 flex items-center gap-1 bg-black/70 text-white text-[10px] font-medium px-1.5 py-0.5 rounded-md backdrop-blur-sm">
                           <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24">
                             <path d="M8 5v14l11-7z" />
@@ -731,87 +771,92 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
       {/* ── Generation detail modal ────────────────────────── */}
       {selectedHistoryGen && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center p-4 sm:p-6">
-          {/* Backdrop */}
-          <div
-            className="absolute inset-0 bg-black/60 backdrop-blur-sm"
-            onClick={() => setSelectedHistoryId(null)}
-          />
+        <div className="fixed inset-0 z-[60] flex items-end sm:items-center justify-center p-0 sm:p-6">
+          <div className="absolute inset-0 bg-black/70 backdrop-blur-md" onClick={() => setSelectedHistoryId(null)} />
+          <div className="relative z-10 bg-canvas w-full sm:rounded-2xl sm:max-w-3xl max-h-[92vh] flex flex-col overflow-hidden shadow-2xl border border-line">
 
-          {/* Panel */}
-          <div className="relative z-10 bg-canvas rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden">
-            {/* Modal header */}
-            <div className="flex items-start justify-between gap-4 px-6 py-5 border-b border-line flex-shrink-0">
-              <div className="min-w-0">
-                <p className="text-sm font-medium text-hi leading-snug line-clamp-2">
-                  {selectedHistoryGen.prompt || 'Pas de description'}
-                </p>
-                <p className="text-xs text-mute mt-1">{formatDate(selectedHistoryGen.created_at)}</p>
+            {/* Header */}
+            <div className="flex items-center justify-between px-5 py-4 border-b border-line flex-shrink-0">
+              <div className="min-w-0 flex-1">
+                <p className="text-[11px] font-medium text-mute uppercase tracking-widest mb-0.5">Création</p>
+                <p className="text-sm font-medium text-hi truncate">{selectedHistoryGen.prompt || 'Sans description'}</p>
               </div>
-              <button
-                onClick={() => setSelectedHistoryId(null)}
-                className="flex-shrink-0 w-8 h-8 rounded-xl border border-line flex items-center justify-center text-mid hover:text-hi hover:bg-raised transition-colors"
-              >
-                <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-                </svg>
-              </button>
+              <div className="flex items-center gap-3 ml-4 flex-shrink-0">
+                <span className="text-[11px] text-mute">{formatDate(selectedHistoryGen.created_at)}</span>
+                <button onClick={() => setSelectedHistoryId(null)} className="w-8 h-8 rounded-xl border border-line flex items-center justify-center text-mid hover:text-hi hover:bg-raised transition-colors">
+                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" /></svg>
+                </button>
+              </div>
             </div>
 
-            {/* Scrollable body */}
-            <div className="flex-1 overflow-y-auto px-6 py-5 space-y-6">
-              {/* Images horizontal scroll */}
-              <div className="flex gap-4 overflow-x-auto pb-1 -mx-1 px-1">
-                {selectedHistoryGen.output_image_urls.map((url, i) => (
-                  <div key={i} className="flex-shrink-0 w-64 space-y-2.5">
-                    <div className="rounded-xl overflow-hidden border border-line bg-raised" style={{ aspectRatio: '4/3' }}>
-                      <img src={url} alt={`Variante ${i + 1}`} className="w-full h-full object-cover" />
-                    </div>
-                    <div className="flex gap-2">
-                      <button
-                        onClick={() => downloadImage(url, i)}
-                        className="flex-1 flex items-center justify-center gap-1.5 border border-line text-hi text-xs font-medium rounded-lg py-2 hover:bg-raised transition-colors"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                        </svg>
-                        Télécharger
-                      </button>
-                      <button
-                        onClick={() => selectForHistoryVideo(selectedHistoryGen, url)}
-                        className="flex-1 flex items-center justify-center gap-1.5 bg-hi text-canvas text-xs font-medium rounded-lg py-2 hover:opacity-80 transition-opacity"
-                      >
-                        <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                        </svg>
-                        Créer vidéo
-                      </button>
-                    </div>
-                  </div>
-                ))}
-              </div>
+            {/* Body */}
+            <div className="flex-1 overflow-y-auto p-5 space-y-4">
+              <div className="grid grid-cols-2 gap-4">
+                {selectedHistoryGen.output_image_urls.map((url, i) => {
+                  const hasVideo = !!(selectedHistoryGen.video_urls?.[String(i)])
+                  const vidUrl = selectedHistoryGen.video_urls?.[String(i)]
+                  return (
+                    <div key={i} className="rounded-2xl border border-line overflow-hidden bg-raised">
+                      {/* Image */}
+                      <div className="relative" style={{ aspectRatio: '4/3' }}>
+                        <img src={url} alt={`Variante ${i + 1}`} className="w-full h-full object-cover" />
+                        {hasVideo && (
+                          <div className="absolute top-2.5 right-2.5 flex items-center gap-1 bg-black/70 text-white text-[10px] font-semibold px-2 py-1 rounded-lg backdrop-blur-sm">
+                            <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
+                            Vidéo
+                          </div>
+                        )}
+                      </div>
 
-              {/* Video section */}
-              {selectedHistoryGen.video_url && (
-                <div className="space-y-3">
-                  <VideoPlayer videoUrl={selectedHistoryGen.video_url} />
-                  <button
-                    onClick={() => {
-                      const link = document.createElement('a')
-                      link.href = `/api/download-video?url=${encodeURIComponent(selectedHistoryGen.video_url!)}`
-                      link.download = 'operiqa-video.mp4'
-                      link.click()
-                    }}
-                    className="flex items-center justify-center gap-2 w-full bg-hi text-canvas text-sm font-medium rounded-xl py-3 hover:opacity-80 transition-opacity"
-                  >
-                    <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
-                    </svg>
-                    Télécharger la vidéo
-                  </button>
-                </div>
-              )}
+                      {/* Video player */}
+                      {hasVideo && vidUrl && (
+                        <div className="border-t border-line bg-black">
+                          <video src={vidUrl} controls loop playsInline className="w-full" style={{ maxHeight: 160 }} />
+                        </div>
+                      )}
+
+                      {/* Actions */}
+                      <div className="flex gap-2 p-3 border-t border-line">
+                        <button
+                          onClick={() => downloadImage(url, i)}
+                          className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium text-mid hover:text-hi border border-line hover:border-line-mid rounded-xl py-2.5 transition-colors"
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                          Image
+                        </button>
+                        <button
+                          onClick={() => selectForHistoryVideo(selectedHistoryGen, url, i)}
+                          className={`flex-1 flex items-center justify-center gap-1.5 text-xs font-medium rounded-xl py-2.5 transition-all ${
+                            hasVideo
+                              ? 'bg-raised border border-line text-mid hover:text-hi hover:border-line-mid'
+                              : 'bg-hi text-canvas hover:opacity-80'
+                          }`}
+                        >
+                          <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                          </svg>
+                          {hasVideo ? 'Voir vidéo' : 'Créer vidéo'}
+                        </button>
+                        {hasVideo && vidUrl && (
+                          <button
+                            onClick={() => {
+                              const link = document.createElement('a')
+                              link.href = `/api/download-video?url=${encodeURIComponent(vidUrl)}`
+                              link.download = 'operiqa-video.mp4'
+                              link.click()
+                            }}
+                            className="flex-1 flex items-center justify-center gap-1.5 text-xs font-medium text-mid hover:text-hi border border-line hover:border-line-mid rounded-xl py-2.5 transition-colors"
+                          >
+                            <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" /></svg>
+                            Vidéo
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )
+                })}
+              </div>
             </div>
           </div>
         </div>

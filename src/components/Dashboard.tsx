@@ -155,7 +155,7 @@ export default function Dashboard({ initialGenerations, userEmail }: Props) {
     setPendingId(data.generation.id)
   }
 
-  async function handleSelectForVideo(imageUrl: string) {
+  async function handleSelectForVideo(imageUrl: string, imageIndex: number) {
     if (!currentGenerationId) return
     setSelectedForVideo(imageUrl)
     setGeneratingVideo(true)
@@ -167,7 +167,7 @@ export default function Dashboard({ initialGenerations, userEmail }: Props) {
       res = await fetch('/api/generate-video', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ imageUrl, generationId: currentGenerationId }),
+        body: JSON.stringify({ imageUrl, generationId: currentGenerationId, imageIndex }),
       })
     } catch {
       setVideoStatus('')
@@ -184,42 +184,33 @@ export default function Dashboard({ initialGenerations, userEmail }: Props) {
       return
     }
 
-    pollVideoStatus(data.requestId, currentGenerationId)
+    pollVideoStatus(currentGenerationId, imageIndex)
   }
 
-  function pollVideoStatus(requestId: string, generationId: string) {
-    setVideoStatus('Video işleniyor — 1–3 dakika sürebilir...')
-
+  function pollVideoStatus(generationId: string, imageIndex: number) {
+    setVideoStatus('Vidéo en cours de traitement — 4–5 minutes...')
     const check = async () => {
-      let res: Response
       try {
-        res = await fetch(
-          `/api/video-status?requestId=${encodeURIComponent(requestId)}&generationId=${encodeURIComponent(generationId)}`
-        )
-      } catch {
-        videoPollingRef.current = setTimeout(check, 12000)
-        return
-      }
-      const data = await res.json()
-
-      if (data.status === 'COMPLETED') {
-        setGeneratingVideo(false)
-        setVideoStatus('')
-        setVideoUrl(data.videoUrl)
-        setGenerations(prev =>
-          prev.map(g => g.id === generationId ? { ...g, video_url: data.videoUrl } : g)
-        )
-        return
-      }
-      if (data.status === 'FAILED') {
-        setGeneratingVideo(false)
-        setVideoStatus('')
-        setError('Video oluşturma başarısız oldu.')
-        return
-      }
+        const res = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}&imageIndex=${imageIndex}`)
+        const data = await res.json()
+        if (data.status === 'COMPLETED') {
+          setGeneratingVideo(false)
+          setVideoStatus('')
+          setVideoUrl(data.videoUrl)
+          setGenerations(prev =>
+            prev.map(g => g.id === generationId ? { ...g, video_url: data.videoUrl } : g)
+          )
+          return
+        }
+        if (data.status === 'FAILED') {
+          setGeneratingVideo(false)
+          setVideoStatus('')
+          setError('Échec de la création vidéo.')
+          return
+        }
+      } catch {}
       videoPollingRef.current = setTimeout(check, 12000)
     }
-
     check()
   }
 

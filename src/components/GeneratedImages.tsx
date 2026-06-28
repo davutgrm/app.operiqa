@@ -2,7 +2,7 @@
 
 interface Props {
   images: string[]
-  onSelectForVideo: (imageUrl: string) => void
+  onSelectForVideo: (imageUrl: string, imageIndex: number) => void
   generatingVideo: boolean
   selectedForVideo: string | null
 }
@@ -63,7 +63,7 @@ export default function GeneratedImages({ images, onSelectForVideo, generatingVi
               Plein format
             </a>
             <button
-              onClick={() => onSelectForVideo(url)}
+              onClick={() => onSelectForVideo(url, i)}
               disabled={generatingVideo}
               className="flex-1 flex items-center justify-center gap-1.5 bg-white/20 hover:bg-white/30 backdrop-blur-md border border-white/30 text-white text-xs font-medium rounded-xl py-2.5 transition-colors disabled:opacity-40 disabled:cursor-not-allowed"
             >
