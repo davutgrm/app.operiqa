@@ -2,6 +2,9 @@ import Stripe from 'stripe'
 import Link from 'next/link'
 import PlanCard, { type Plan } from '@/components/PlanCard'
 import ThemeToggle from '@/components/ThemeToggle'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { getDictionary } from '@/lib/i18n/dictionaries'
+import { toLocale } from '@/lib/i18n/config'
 
 const PLANS = [
   { name: 'Warm Up',  priceId: 'price_1TnP0192bdtsK7lGI7QSFB4N', credits: 100,  popular: false },
@@ -15,7 +18,9 @@ const FALLBACK_AMOUNTS: Record<string, number> = {
   'price_1TnP0f92bdtsK7lGutK7PY0B': 100000,
 }
 
-export default async function PricingPage() {
+export default async function PricingPage({ params }: { params: Promise<{ lang: string }> }) {
+  const lang = toLocale((await params).lang)
+  const dict = await getDictionary(lang)
   const clean = (v: string | undefined) => v?.trim().replace(/^﻿/, '') ?? ''
   const stripe = new Stripe(clean(process.env.STRIPE_SECRET_KEY))
 
@@ -40,9 +45,10 @@ export default async function PricingPage() {
         <div className="max-w-4xl mx-auto h-full px-6 flex items-center justify-between">
           <span className="text-xl font-bold text-hi tracking-wide">Operiqa</span>
           <div className="flex items-center gap-2">
-            <ThemeToggle />
-            <Link href="/dashboard" className="text-sm text-mid border border-line rounded-lg px-3 py-1.5 hover:text-hi hover:border-hi transition-colors">
-              ← Dashboard
+            <LanguageSwitcher lang={lang} />
+            <ThemeToggle dict={dict.theme} />
+            <Link href={`/${lang}/dashboard`} className="text-sm text-mid border border-line rounded-lg px-3 py-1.5 hover:text-hi hover:border-hi transition-colors">
+              {dict.pricing.backToDashboard}
             </Link>
           </div>
         </div>
@@ -51,18 +57,18 @@ export default async function PricingPage() {
       <div className="pt-14">
         <div className="max-w-4xl mx-auto px-6 py-16">
           <div className="text-center mb-12">
-            <h1 className="text-2xl font-semibold text-hi tracking-tight">Plans & crédits</h1>
-            <p className="text-sm text-mid mt-2">Choisissez le plan adapté à votre activité. Les crédits sont ajoutés chaque mois.</p>
+            <h1 className="text-2xl font-semibold text-hi tracking-tight">{dict.pricing.title}</h1>
+            <p className="text-sm text-mid mt-2">{dict.pricing.subtitle}</p>
           </div>
 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             {plans.map(plan => (
-              <PlanCard key={plan.priceId} plan={plan} />
+              <PlanCard key={plan.priceId} plan={plan} lang={lang} dict={dict.planCard} />
             ))}
           </div>
 
           <p className="text-center text-xs text-mute mt-10">
-            1 image = 1 crédit · 1 vidéo = 5 crédits · Les crédits s'accumulent et ne expirent pas.
+            {dict.pricing.footnote}
           </p>
         </div>
       </div>

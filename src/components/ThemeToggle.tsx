@@ -2,8 +2,9 @@
 
 import { useTheme } from 'next-themes'
 import { useEffect, useState } from 'react'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 
-export default function ThemeToggle() {
+export default function ThemeToggle({ dict }: { dict: Dictionary['theme'] }) {
   const { theme, setTheme } = useTheme()
   const [mounted, setMounted] = useState(false)
 
@@ -17,7 +18,7 @@ export default function ThemeToggle() {
     <button
       onClick={() => setTheme(isDark ? 'light' : 'dark')}
       className="w-8 h-8 flex items-center justify-center border border-line rounded-lg text-mid hover:text-hi hover:border-hi transition-colors"
-      aria-label="Toggle theme"
+      aria-label={dict.toggleLabel}
     >
       {isDark ? (
         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">

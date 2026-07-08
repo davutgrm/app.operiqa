@@ -1,6 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { formatCurrency, formatNumber, interpolate } from '@/lib/i18n/format'
+import type { Locale } from '@/lib/i18n/config'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 
 export interface Plan {
   name: string
@@ -11,17 +14,17 @@ export interface Plan {
   popular: boolean
 }
 
-export default function PlanCard({ plan }: { plan: Plan }) {
+interface Props {
+  plan: Plan
+  lang: Locale
+  dict: Dictionary['planCard']
+}
+
+export default function PlanCard({ plan, lang, dict }: Props) {
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
 
-  const price = plan.amount > 0
-    ? new Intl.NumberFormat('fr-FR', {
-        style: 'currency',
-        currency: plan.currency.toUpperCase(),
-        minimumFractionDigits: 0,
-      }).format(plan.amount / 100)
-    : '—'
+  const price = plan.amount > 0 ? formatCurrency(lang, plan.amount, plan.currency) : '—'
 
   async function handleSubscribe() {
     setLoading(true)
@@ -34,12 +37,12 @@ export default function PlanCard({ plan }: { plan: Plan }) {
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
-        setError(data.error ?? 'Une erreur est survenue.')
+        setError(data.error ?? dict.genericError)
         return
       }
       window.location.href = data.url
     } catch {
-      setError('Une erreur est survenue.')
+      setError(dict.genericError)
     } finally {
       setLoading(false)
     }
@@ -51,7 +54,7 @@ export default function PlanCard({ plan }: { plan: Plan }) {
     }`}>
       {plan.popular && (
         <div className="absolute -top-3 left-1/2 -translate-x-1/2 bg-hi text-canvas text-xs font-semibold px-3 py-1 rounded-full whitespace-nowrap">
-          Populaire
+          {dict.popular}
         </div>
       )}
 
@@ -59,7 +62,7 @@ export default function PlanCard({ plan }: { plan: Plan }) {
         <p className="text-xs font-medium text-mute uppercase tracking-widest">{plan.name}</p>
         <p className="mt-2">
           <span className="text-3xl font-bold text-hi">{price}</span>
-          <span className="text-sm text-mute ml-1">/mois</span>
+          <span className="text-sm text-mute ml-1">{dict.perMonth}</span>
         </p>
       </div>
 
@@ -67,15 +70,15 @@ export default function PlanCard({ plan }: { plan: Plan }) {
         <svg className="w-4 h-4 text-mute flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
         </svg>
-        <span className="text-sm font-semibold text-hi">{plan.credits.toLocaleString('fr-FR')} crédits</span>
-        <span className="text-xs text-mute">/mois</span>
+        <span className="text-sm font-semibold text-hi">{formatNumber(lang, plan.credits)} {dict.creditsSuffix}</span>
+        <span className="text-xs text-mute">{dict.perMonth}</span>
       </div>
 
       <ul className="space-y-2.5 text-sm text-mid flex-1">
         {[
-          `${plan.credits.toLocaleString('fr-FR')} crédits/mois`,
-          '4 visuels par génération',
-          'Vidéos lifestyle incluses',
+          interpolate(dict.creditsPerMonth, { count: formatNumber(lang, plan.credits) }),
+          dict.feature4Images,
+          dict.featureVideos,
         ].map(feature => (
           <li key={feature} className="flex items-center gap-2">
             <svg className="w-3.5 h-3.5 text-green-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -97,7 +100,7 @@ export default function PlanCard({ plan }: { plan: Plan }) {
             : 'border border-line text-hi bg-canvas hover:bg-raised'
         }`}
       >
-        {loading ? 'Redirection...' : "S'abonner"}
+        {loading ? dict.redirecting : dict.subscribe}
       </button>
     </div>
   )

@@ -1,6 +1,9 @@
 'use client'
 
 import { useState } from 'react'
+import { formatDateTime, plural, interpolate } from '@/lib/i18n/format'
+import type { Locale } from '@/lib/i18n/config'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 
 interface Generation {
   id: string
@@ -13,16 +16,11 @@ interface Generation {
 
 interface Props {
   generations: Generation[]
+  lang: Locale
+  dict: Dictionary['historyGallery']
 }
 
-function formatDate(iso: string) {
-  const d = new Date(iso)
-  return d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' })
-    + ' · '
-    + d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-}
-
-export default function HistoryGallery({ generations }: Props) {
+export default function HistoryGallery({ generations, lang, dict }: Props) {
   const [expanded, setExpanded] = useState<string | null>(null)
 
   const completed = generations.filter(g => g.output_image_urls.length > 0)
@@ -33,7 +31,7 @@ export default function HistoryGallery({ generations }: Props) {
 
       {/* Section header */}
       <div className="flex items-center gap-3 pb-4 border-b border-line mb-1">
-        <h2 className="text-sm font-semibold text-hi">Historique</h2>
+        <h2 className="text-sm font-semibold text-hi">{dict.title}</h2>
         <span className="text-[11px] font-medium text-mute bg-raised border border-line rounded-full px-2 py-0.5">
           {completed.length}
         </span>
@@ -62,18 +60,18 @@ export default function HistoryGallery({ generations }: Props) {
               {/* Prompt + date */}
               <div className="flex-1 min-w-0">
                 <p className="text-sm text-hi truncate leading-snug">{gen.prompt}</p>
-                <p className="text-xs text-mute mt-0.5">{formatDate(gen.created_at)}</p>
+                <p className="text-xs text-mute mt-0.5">{formatDateTime(lang, gen.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
               </div>
 
               {/* Badges */}
               <div className="flex items-center gap-2 flex-shrink-0">
                 {gen.video_url && (
                   <span className="text-[10px] font-medium text-accent bg-accent-muted border border-accent-ring rounded-full px-2 py-0.5">
-                    Vidéo
+                    {dict.video}
                   </span>
                 )}
                 <span className="text-[10px] font-medium text-emerald-400 bg-emerald-950/50 border border-emerald-900/50 rounded-full px-2 py-0.5">
-                  {gen.output_image_urls.length} image(s)
+                  {plural(dict, gen.output_image_urls.length, 'imageCount')}
                 </span>
                 <svg
                   className={`w-4 h-4 text-mute group-hover:text-low transition-all ${expanded === gen.id ? 'rotate-180' : ''}`}
@@ -97,7 +95,7 @@ export default function HistoryGallery({ generations }: Props) {
                       className="group relative rounded-lg overflow-hidden bg-raised border border-line hover:border-line-mid transition-colors"
                       style={{ aspectRatio: '4/3' }}
                     >
-                      <img src={url} alt={`Variante ${i + 1}`} className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
+                      <img src={url} alt={interpolate(dict.variantAlt, { index: i + 1 })} className="w-full h-full object-cover group-hover:opacity-80 transition-opacity" />
                     </a>
                   ))}
                 </div>

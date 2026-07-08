@@ -3,8 +3,17 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import { interpolate } from '@/lib/i18n/format'
+import type { Locale } from '@/lib/i18n/config'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 
-export default function LoginPage() {
+interface Props {
+  lang: Locale
+  dict: Dictionary['login']
+  commonDict: Dictionary['common']
+}
+
+export default function LoginForm({ lang, dict, commonDict }: Props) {
   const router = useRouter()
   const [view, setView] = useState<'login' | 'forgot'>('login')
   const [email, setEmail] = useState('')
@@ -16,9 +25,9 @@ export default function LoginPage() {
   useEffect(() => {
     const params = new URLSearchParams(window.location.hash.substring(1))
     if (params.get('type') === 'recovery') {
-      router.replace('/auth/reset-password' + window.location.hash)
+      router.replace(`/${lang}/auth/reset-password` + window.location.hash)
     }
-  }, [router])
+  }, [router, lang])
 
   async function handleLogin(e: React.FormEvent) {
     e.preventDefault()
@@ -27,11 +36,11 @@ export default function LoginPage() {
     const supabase = createClient()
     const { error } = await supabase.auth.signInWithPassword({ email, password })
     if (error) {
-      setError('Identifiant ou mot de passe incorrect.')
+      setError(dict.loginError)
       setLoading(false)
       return
     }
-    router.push('/dashboard')
+    router.push(`/${lang}/dashboard`)
     router.refresh()
   }
 
@@ -42,15 +51,15 @@ export default function LoginPage() {
     try {
       const supabase = createClient()
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(email, {
-        redirectTo: `${window.location.origin}/auth/callback?next=/auth/reset-password`,
+        redirectTo: `${window.location.origin}/auth/callback?next=/${lang}/auth/reset-password`,
       })
       if (resetError) {
-        setError('La demande de réinitialisation a échoué. Veuillez réessayer.')
+        setError(dict.resetError)
         return
       }
       setResetSent(true)
     } catch {
-      setError('La demande de réinitialisation a échoué. Veuillez réessayer.')
+      setError(dict.resetError)
     } finally {
       setLoading(false)
     }
@@ -67,16 +76,16 @@ export default function LoginPage() {
       <div className="w-full max-w-sm">
 
         <div className="mb-8">
-          <p className="text-sm font-semibold text-hi tracking-tight mb-6">Operiqa</p>
+          <p className="text-sm font-semibold text-hi tracking-tight mb-6">{commonDict.appName}</p>
           {view === 'login' ? (
             <>
-              <h1 className="text-2xl font-semibold text-hi tracking-tight">Se connecter</h1>
-              <p className="text-sm text-mid mt-1.5">Créez des visuels et vidéos lifestyle avec l'IA.</p>
+              <h1 className="text-2xl font-semibold text-hi tracking-tight">{dict.loginTitle}</h1>
+              <p className="text-sm text-mid mt-1.5">{dict.loginSubtitle}</p>
             </>
           ) : (
             <>
-              <h1 className="text-2xl font-semibold text-hi tracking-tight">Mot de passe oublié</h1>
-              <p className="text-sm text-mid mt-1.5">Nous vous enverrons un lien de réinitialisation.</p>
+              <h1 className="text-2xl font-semibold text-hi tracking-tight">{dict.forgotTitle}</h1>
+              <p className="text-sm text-mid mt-1.5">{dict.forgotSubtitle}</p>
             </>
           )}
         </div>
@@ -84,27 +93,27 @@ export default function LoginPage() {
         {view === 'login' ? (
           <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-mid mb-1.5">E-mail</label>
+              <label className="block text-xs font-medium text-mid mb-1.5">{dict.emailLabel}</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 autoFocus
-                placeholder="nom@entreprise.com"
+                placeholder={dict.emailPlaceholder}
                 className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-hi placeholder:text-mute outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all"
               />
             </div>
 
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-medium text-mid">Mot de passe</label>
+                <label className="block text-xs font-medium text-mid">{dict.passwordLabel}</label>
                 <button
                   type="button"
                   onClick={() => switchView('forgot')}
                   className="text-xs text-mid hover:text-hi transition-colors"
                 >
-                  Mot de passe oublié
+                  {dict.forgotLink}
                 </button>
               </div>
               <input
@@ -112,7 +121,7 @@ export default function LoginPage() {
                 value={password}
                 onChange={e => setPassword(e.target.value)}
                 required
-                placeholder="••••••••"
+                placeholder={dict.passwordPlaceholder}
                 className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-hi placeholder:text-mute outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all"
               />
             </div>
@@ -131,7 +140,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-80 disabled:opacity-40"
             >
-              {loading ? 'Connexion en cours...' : 'Se connecter'}
+              {loading ? dict.loggingIn : dict.loginButton}
             </button>
           </form>
         ) : resetSent ? (
@@ -140,27 +149,27 @@ export default function LoginPage() {
               <svg className="w-4 h-4 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
               </svg>
-              Lien de réinitialisation envoyé à votre adresse e-mail.
+              {dict.resetSent}
             </div>
             <button
               type="button"
               onClick={() => switchView('login')}
               className="w-full border border-line text-hi text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-70"
             >
-              Retour à la connexion
+              {dict.backToLogin}
             </button>
           </div>
         ) : (
           <form onSubmit={handleForgot} className="space-y-4">
             <div>
-              <label className="block text-xs font-medium text-mid mb-1.5">E-mail</label>
+              <label className="block text-xs font-medium text-mid mb-1.5">{dict.emailLabel}</label>
               <input
                 type="email"
                 value={email}
                 onChange={e => setEmail(e.target.value)}
                 required
                 autoFocus
-                placeholder="nom@entreprise.com"
+                placeholder={dict.emailPlaceholder}
                 className="w-full rounded-xl border border-line bg-surface px-4 py-2.5 text-sm text-hi placeholder:text-mute outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all"
               />
             </div>
@@ -179,7 +188,7 @@ export default function LoginPage() {
               disabled={loading}
               className="w-full bg-hi text-canvas text-sm font-medium rounded-xl py-2.5 transition-opacity hover:opacity-80 disabled:opacity-40"
             >
-              {loading ? 'Envoi en cours...' : 'Envoyer le lien de réinitialisation'}
+              {loading ? dict.sending : dict.sendResetLink}
             </button>
 
             <button
@@ -187,13 +196,13 @@ export default function LoginPage() {
               onClick={() => switchView('login')}
               className="w-full text-sm text-mid hover:text-hi transition-colors py-1"
             >
-              ← Retour
+              {dict.back}
             </button>
           </form>
         )}
 
         <p className="text-center text-xs text-mute mt-8">
-          © {new Date().getFullYear()} Operiqa
+          {interpolate(commonDict.copyright, { year: new Date().getFullYear() })}
         </p>
       </div>
     </div>

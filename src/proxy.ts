@@ -1,5 +1,16 @@
 import { createServerClient } from '@supabase/ssr'
 import { NextResponse, type NextRequest } from 'next/server'
+import { locales, defaultLocale, type Locale } from '@/lib/i18n/config'
+
+function getLocale(request: NextRequest): Locale {
+  const cookieLocale = request.cookies.get('NEXT_LOCALE')?.value
+  if (cookieLocale && (locales as readonly string[]).includes(cookieLocale)) {
+    return cookieLocale as Locale
+  }
+  const acceptLanguage = request.headers.get('accept-language') ?? ''
+  if (acceptLanguage.toLowerCase().startsWith('tr')) return 'tr'
+  return defaultLocale
+}
 
 export async function proxy(request: NextRequest) {
   let supabaseResponse = NextResponse.next({ request })
@@ -23,17 +34,35 @@ export async function proxy(request: NextRequest) {
     }
   )
 
-  const { data: { user } } = await supabase.auth.getUser()
-
   const { pathname } = request.nextUrl
 
-  const PUBLIC_PATHS = ['/login', '/api/webhook', '/api/n8n-callback', '/api/video-callback']
-  if (!user && !PUBLIC_PATHS.includes(pathname)) {
-    return NextResponse.redirect(new URL('/login', request.url))
+  // Route Handlers (/api/*) and the fixed Supabase callback URL (/auth/callback)
+  // stay outside the [lang] segment and skip locale handling entirely.
+  if (pathname.startsWith('/api') || pathname.startsWith('/auth/')) {
+    const { data: { user } } = await supabase.auth.getUser()
+    const PUBLIC_API_PATHS = ['/api/webhook', '/api/n8n-callback', '/api/video-callback']
+    if (!user && !PUBLIC_API_PATHS.includes(pathname)) {
+      return NextResponse.redirect(new URL(`/${getLocale(request)}/login`, request.url))
+    }
+    return supabaseResponse
   }
 
-  if (user && pathname === '/login') {
-    return NextResponse.redirect(new URL('/', request.url))
+  const pathnameLocale = locales.find(l => pathname === `/${l}` || pathname.startsWith(`/${l}/`))
+  if (!pathnameLocale) {
+    const locale = getLocale(request)
+    return NextResponse.redirect(new URL(`/${locale}${pathname}${request.nextUrl.search}`, request.url))
+  }
+
+  const { data: { user } } = await supabase.auth.getUser()
+  const pathWithoutLocale = pathname.slice(`/${pathnameLocale}`.length) || '/'
+
+  const PUBLIC_PATHS = ['/login', '/auth/reset-password']
+  if (!user && !PUBLIC_PATHS.includes(pathWithoutLocale)) {
+    return NextResponse.redirect(new URL(`/${pathnameLocale}/login`, request.url))
+  }
+
+  if (user && pathWithoutLocale === '/login') {
+    return NextResponse.redirect(new URL(`/${pathnameLocale}`, request.url))
   }
 
   return supabaseResponse

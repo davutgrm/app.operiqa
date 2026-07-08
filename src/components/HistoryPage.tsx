@@ -1,6 +1,12 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
+import { formatDateTime, plural, interpolate } from '@/lib/i18n/format'
+import type { Locale } from '@/lib/i18n/config'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
+import LanguageSwitcher from './LanguageSwitcher'
+import ThemeToggle from './ThemeToggle'
 
 interface Generation {
   id: string
@@ -14,15 +20,9 @@ interface Generation {
 
 interface Props {
   generations: Generation[]
-}
-
-function formatDate(iso: string) {
-  const d = new Date(iso)
-  return (
-    d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short', year: 'numeric' }) +
-    ' · ' +
-    d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  )
+  lang: Locale
+  dict: Dictionary['history']
+  themeDict: Dictionary['theme']
 }
 
 async function downloadImage(url: string, index: number) {
@@ -37,7 +37,7 @@ async function downloadImage(url: string, index: number) {
   URL.revokeObjectURL(blobUrl)
 }
 
-export default function HistoryPage({ generations: initialGenerations }: Props) {
+export default function HistoryPage({ generations: initialGenerations, lang, dict, themeDict }: Props) {
   const [generations, setGenerations] = useState<Generation[]>(initialGenerations)
   const [selectedId, setSelectedId] = useState<string | null>(null)
   const [generatingKey, setGeneratingKey] = useState<string | null>(null)
@@ -83,14 +83,14 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
 
         if (data.status === 'FAILED') {
           setGeneratingKey(null)
-          setError('Échec de la création vidéo.')
+          setError(dict.createVideoError)
           return
         }
       } catch {}
 
       if (attempts >= MAX_ATTEMPTS) {
         setGeneratingKey(null)
-        setError('La génération de la vidéo a expiré. Veuillez réessayer.')
+        setError(dict.videoTimeoutError)
         return
       }
       videoPollingRef.current = setTimeout(check, 12000)
@@ -112,7 +112,7 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
       })
     } catch {
       setGeneratingKey(null)
-      setError('Impossible de se connecter au serveur.')
+      setError(dict.connectionError)
       return
     }
 
@@ -120,7 +120,7 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
 
     if (!res.ok) {
       setGeneratingKey(null)
-      setError(data.error ?? 'Impossible de démarrer la vidéo.')
+      setError(data.error ?? dict.startVideoError)
       return
     }
 
@@ -142,13 +142,17 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
       <div className="border-b border-line bg-canvas/95 backdrop-blur-sm sticky top-0 z-10">
         <div className="max-w-6xl mx-auto px-6 h-14 flex items-center justify-between">
           <div className="flex items-center gap-3">
-            <a href="/" className="text-mid hover:text-hi transition-colors">
+            <Link href={`/${lang}`} className="text-mid hover:text-hi transition-colors">
               <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 19l-7-7m0 0l7-7m-7 7h18" />
               </svg>
-            </a>
-            <h1 className="text-sm font-semibold text-hi">Mes images</h1>
+            </Link>
+            <h1 className="text-sm font-semibold text-hi">{dict.title}</h1>
             <span className="text-xs text-mute bg-raised border border-line rounded-full px-2 py-0.5">{generations.length}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <LanguageSwitcher lang={lang} />
+            <ThemeToggle dict={themeDict} />
           </div>
         </div>
       </div>
@@ -162,11 +166,11 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                 <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
               </svg>
             </div>
-            <p className="text-sm font-medium text-hi mb-1">Aucune création pour l'instant</p>
-            <p className="text-xs text-mute">Créez votre première image depuis la page d'accueil.</p>
-            <a href="/" className="mt-5 text-xs font-medium text-hi bg-hi/10 hover:bg-hi/20 border border-line rounded-xl px-4 py-2.5 transition-colors">
-              Créer une image →
-            </a>
+            <p className="text-sm font-medium text-hi mb-1">{dict.emptyTitle}</p>
+            <p className="text-xs text-mute">{dict.emptySubtitle}</p>
+            <Link href={`/${lang}`} className="mt-5 text-xs font-medium text-hi bg-hi/10 hover:bg-hi/20 border border-line rounded-xl px-4 py-2.5 transition-colors">
+              {dict.emptyCta}
+            </Link>
           </div>
         )}
 
@@ -193,7 +197,7 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
 
                     <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-all duration-300 flex items-center justify-center opacity-0 group-hover:opacity-100">
                       <span className="bg-white/90 backdrop-blur-sm text-black text-xs font-semibold px-4 py-2 rounded-xl shadow">
-                        {selectedId === gen.id ? 'Fermer' : 'Voir les détails'}
+                        {selectedId === gen.id ? dict.close : dict.viewDetails}
                       </span>
                     </div>
 
@@ -201,14 +205,14 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                       {hasAnyVideo(gen) && (
                         <div className="flex items-center gap-1 bg-black/70 text-white text-[10px] font-semibold px-2 py-1 rounded-lg backdrop-blur-sm">
                           <svg className="w-2.5 h-2.5 fill-white" viewBox="0 0 24 24"><path d="M8 5v14l11-7z"/></svg>
-                          Vidéo
+                          {dict.video}
                         </div>
                       )}
                     </div>
 
                     <div className="absolute bottom-2.5 left-2.5">
                       <span className="text-[10px] font-medium text-white/80 bg-black/50 backdrop-blur-sm px-2 py-0.5 rounded-md">
-                        {gen.output_image_urls.length} image{gen.output_image_urls.length > 1 ? 's' : ''}
+                        {plural(dict, gen.output_image_urls.length, 'imageCount')}
                       </span>
                     </div>
                   </div>
@@ -216,9 +220,9 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                   {/* Meta */}
                   <div className="px-4 py-3">
                     <p className="text-xs font-medium text-hi line-clamp-2 leading-snug">
-                      {gen.prompt || 'Sans description'}
+                      {gen.prompt || dict.noDescription}
                     </p>
-                    <p className="text-[11px] text-mute mt-1.5">{formatDate(gen.created_at)}</p>
+                    <p className="text-[11px] text-mute mt-1.5">{formatDateTime(lang, gen.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                   </div>
                 </div>
               ))}
@@ -231,9 +235,9 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                 <div className="flex items-start justify-between mb-6">
                   <div className="min-w-0 flex-1 pr-4">
                     <p className="text-base font-semibold text-hi leading-snug">
-                      {selectedGen.prompt || 'Sans description'}
+                      {selectedGen.prompt || dict.noDescription}
                     </p>
-                    <p className="text-xs text-mute mt-1">{formatDate(selectedGen.created_at)}</p>
+                    <p className="text-xs text-mute mt-1">{formatDateTime(lang, selectedGen.created_at, { day: 'numeric', month: 'short', year: 'numeric' })}</p>
                   </div>
                   <button
                     onClick={() => setSelectedId(null)}
@@ -263,7 +267,7 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                       <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                       <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                     </svg>
-                    Vidéo en cours de génération — 1 à 3 minutes...
+                    {dict.videoGeneratingBanner}
                   </div>
                 )}
 
@@ -288,7 +292,7 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                           )}
                           <img
                             src={url}
-                            alt={`Variante ${i + 1}`}
+                            alt={interpolate(dict.variantAlt, { index: i + 1 })}
                             style={{ display: 'block', width: '100%', height: 'auto', borderRadius: '12px 12px 0 0' }}
                           />
                         </div>
@@ -301,13 +305,13 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                             rel="noopener noreferrer"
                             className="flex-1 flex items-center justify-center text-xs font-medium text-mid hover:text-hi border border-line hover:border-line-mid rounded-xl py-2 px-3 transition-colors"
                           >
-                            ↗ Ouvrir
+                            {dict.open}
                           </a>
                           <button
                             onClick={() => downloadImage(url, i)}
                             className="flex-1 flex items-center justify-center text-xs font-medium text-mid hover:text-hi border border-line hover:border-line-mid rounded-xl py-2 px-3 transition-colors"
                           >
-                            ↓ Image
+                            {dict.downloadImage}
                           </button>
                           <button
                             onClick={() => !isGeneratingThis && !hasVideo && handleCreateVideo(selectedGen, url, i)}
@@ -326,16 +330,16 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                                   <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                                   <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                                 </svg>
-                                En cours
+                                {dict.inProgress}
                               </>
-                            ) : hasVideo ? 'Vidéo créée' : '▶ Vidéo'}
+                            ) : hasVideo ? dict.videoCreated : dict.createVideo}
                           </button>
                         </div>
 
                         {/* Video player */}
                         {hasVideo && vidUrl && (
                           <div className="p-3 border-t border-line space-y-2">
-                            <p className="text-[10px] font-medium text-mute uppercase tracking-widest">Vidéo de ce visuel</p>
+                            <p className="text-[10px] font-medium text-mute uppercase tracking-widest">{dict.videoOfThisVisual}</p>
                             <video
                               src={vidUrl}
                               controls
@@ -353,7 +357,7 @@ export default function HistoryPage({ generations: initialGenerations }: Props) 
                               }}
                               className="w-full flex items-center justify-center text-xs font-medium text-mid hover:text-hi border border-line hover:border-line-mid rounded-xl py-2.5 transition-colors"
                             >
-                              ↓ Télécharger la vidéo
+                              {dict.downloadVideo}
                             </button>
                           </div>
                         )}

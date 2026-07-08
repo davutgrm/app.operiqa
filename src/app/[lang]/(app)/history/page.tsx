@@ -1,7 +1,11 @@
 import { createClient } from '@/lib/supabase/server'
 import HistoryPage from '@/components/HistoryPage'
+import { getDictionary } from '@/lib/i18n/dictionaries'
+import { toLocale } from '@/lib/i18n/config'
 
-export default async function HistoryRoute() {
+export default async function HistoryRoute({ params }: { params: Promise<{ lang: string }> }) {
+  const lang = toLocale((await params).lang)
+  const dict = await getDictionary(lang)
   const supabase = await createClient()
   const { data: { user } } = await supabase.auth.getUser()
 
@@ -17,5 +21,5 @@ export default async function HistoryRoute() {
       Array.isArray(g.output_image_urls) && g.output_image_urls.length > 0
   )
 
-  return <HistoryPage generations={generations} />
+  return <HistoryPage generations={generations} lang={lang} dict={dict.history} themeDict={dict.theme} />
 }

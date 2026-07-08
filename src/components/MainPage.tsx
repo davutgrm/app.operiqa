@@ -1,11 +1,15 @@
 'use client'
 
 import { useState, useRef, useEffect } from 'react'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import Header from './Header'
 import ImageUploader from './ImageUploader'
 import GeneratedImages from './GeneratedImages'
 import VideoPlayer from './VideoPlayer'
+import { interpolate, plural } from '@/lib/i18n/format'
+import type { Locale } from '@/lib/i18n/config'
+import type { Dictionary } from '@/lib/i18n/dictionaries'
 
 type GenStatus = 'idle' | 'uploading' | 'pending' | 'completed'
 
@@ -22,18 +26,24 @@ interface Generation {
 interface Props {
   userEmail: string
   initialGenerations: Generation[]
+  lang: Locale
+  dict: Dictionary['dashboard']
+  headerDict: Dictionary['header']
+  themeDict: Dictionary['theme']
+  imageUploaderDict: Dictionary['imageUploader']
+  generatedImagesDict: Dictionary['generatedImages']
 }
 
-function formatDate(iso: string) {
-  const d = new Date(iso)
-  return (
-    d.toLocaleDateString('fr-FR', { day: 'numeric', month: 'short' }) +
-    ' · ' +
-    d.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })
-  )
-}
-
-export default function MainPage({ userEmail, initialGenerations }: Props) {
+export default function MainPage({
+  userEmail,
+  initialGenerations,
+  lang,
+  dict,
+  headerDict,
+  themeDict,
+  imageUploaderDict,
+  generatedImagesDict,
+}: Props) {
   const [imageFile, setImageFile] = useState<File | null>(null)
   const [imagePreview, setImagePreview] = useState<string | null>(null)
   const [prompt, setPrompt] = useState('')
@@ -238,14 +248,14 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       res = await fetch('/api/generate-images', { method: 'POST', body: fd })
     } catch {
       setGenStatus('idle')
-      setError('Impossible de se connecter au serveur. Veuillez réessayer.')
+      setError(dict.connectionError)
       return
     }
     const data = await res.json()
 
     if (!res.ok) {
       setGenStatus('idle')
-      setError(data.error ?? 'Échec de la création de l\'image.')
+      setError(data.error ?? dict.createImageError)
       return
     }
 
@@ -269,7 +279,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   async function startVideoGeneration(imageUrl: string, generationId: string, imageIndex: number) {
     setSelectedForVideo(imageUrl)
     setGeneratingVideo(true)
-    setVideoStatus('Génération de la vidéo...')
+    setVideoStatus(dict.generatingVideoStatus)
     setVideoUrl(null)
 
     let res: Response
@@ -282,14 +292,14 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
     } catch {
       setVideoStatus('')
       setGeneratingVideo(false)
-      setError('Impossible de se connecter au serveur. Veuillez réessayer.')
+      setError(dict.connectionError)
       return
     }
     const data = await res.json()
     if (!res.ok) {
       setVideoStatus('')
       setGeneratingVideo(false)
-      setError(data.error ?? 'Impossible de démarrer la vidéo.')
+      setError(data.error ?? dict.startVideoError)
       return
     }
     if (data.status === 'ALREADY_EXISTS') {
@@ -316,7 +326,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
   }
 
   function pollVideoStatus(generationId: string, imageIndex: number) {
-    setVideoStatus('Vidéo en cours de traitement — 1 à 3 minutes...')
+    setVideoStatus(dict.videoProcessingStatus)
     let attempts = 0
     const MAX_ATTEMPTS = 40
 
@@ -326,7 +336,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       try {
         res = await fetch(`/api/video-status?generationId=${encodeURIComponent(generationId)}&imageIndex=${imageIndex}`)
       } catch {
-        if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError('La génération de la vidéo a expiré.'); return }
+        if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError(dict.videoTimeoutError); return }
         videoPollingRef.current = setTimeout(check, 12000)
         return
       }
@@ -346,7 +356,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         return
       }
 
-      if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError('La génération de la vidéo a expiré. Veuillez réessayer.'); return }
+      if (attempts >= MAX_ATTEMPTS) { setGeneratingVideo(false); setVideoStatus(''); setError(dict.videoTimeoutError); return }
       videoPollingRef.current = setTimeout(check, 12000)
     }
     check()
@@ -370,6 +380,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       <Header
         userEmail={userEmail}
         credits={credits}
+        lang={lang}
+        dict={headerDict}
+        themeDict={themeDict}
       />
 
       {/* ── Video generating banner ────────────────────────── */}
@@ -380,7 +393,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
               <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
             </svg>
-            <p className="text-sm font-medium">Votre vidéo est en cours de préparation — elle apparaîtra ci-dessous dans quelques minutes</p>
+            <p className="text-sm font-medium">{dict.videoPreparingBanner}</p>
           </div>
         </div>
       )}
@@ -390,23 +403,23 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
         {/* ── Generate section ───────────────────────────────── */}
         <section className="max-w-4xl mx-auto px-6 pt-14 pb-12">
           <div className="mb-8">
-            <h1 className="text-2xl font-semibold text-hi tracking-tight">Créer un visuel lifestyle</h1>
-            <p className="text-sm text-mid mt-1.5">Importez une photo produit, décrivez la scène, générez avec l'IA.</p>
+            <h1 className="text-2xl font-semibold text-hi tracking-tight">{dict.title}</h1>
+            <p className="text-sm text-mid mt-1.5">{dict.subtitle}</p>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             {/* Left */}
             <div>
-              <label className="block text-[11px] font-medium text-mute mb-2 uppercase tracking-widest">Product Image</label>
+              <label className="block text-[11px] font-medium text-mute mb-2 uppercase tracking-widest">{dict.productImageLabel}</label>
               {videoImageUrl ? (
                 <div className="relative rounded-2xl border border-line overflow-hidden bg-raised" style={{ minHeight: 200 }}>
                   <img
                     src={videoImageUrl}
-                    alt="Image sélectionnée pour la vidéo"
+                    alt={dict.videoImageSelectedAlt}
                     className="w-full h-full object-cover"
                   />
                   <div className="absolute top-3 left-3 bg-black/65 backdrop-blur-sm text-white text-[11px] font-medium px-2.5 py-1 rounded-lg">
-                    Image sélectionnée pour la vidéo
+                    {dict.videoImageSelectedBadge}
                   </div>
                   <button
                     onClick={() => { setVideoImageUrl(null); setVideoGenId(null) }}
@@ -430,13 +443,14 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                     }}
                     preview={imagePreview}
                     onClear={resetSession}
+                    dict={imageUploaderDict}
                   />
                   {transparentBg && (
                     <div className="mt-2.5 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-700 text-xs rounded-xl px-3 py-2.5">
                       <svg className="w-3.5 h-3.5 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01M10.29 3.86L1.82 18a2 2 0 001.71 3h16.94a2 2 0 001.71-3L13.71 3.86a2 2 0 00-3.42 0z" />
                       </svg>
-                      L'arrière-plan de votre produit semble transparent. Une photo sur fond blanc est recommandée pour un meilleur résultat.
+                      {dict.transparencyWarning}
                     </div>
                   )}
                 </>
@@ -448,9 +462,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               {/* Video Mode toggle */}
               <div className="flex items-center justify-between rounded-xl border border-line bg-surface px-4 py-3">
                 <div>
-                  <p className="text-sm font-medium text-hi">Video Mode</p>
+                  <p className="text-sm font-medium text-hi">{dict.videoModeLabel}</p>
                   <p className="text-xs text-mute mt-0.5">
-                    {videoMode ? 'Une vidéo est générée automatiquement après l\'image' : 'Seule l\'image est générée'}
+                    {videoMode ? dict.videoModeOn : dict.videoModeOff}
                   </p>
                 </div>
                 <button
@@ -465,16 +479,16 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               {/* Prompt */}
               <div className="flex-1 flex flex-col">
                 <div className="flex items-center justify-between mb-2">
-                  <label className="text-[11px] font-medium text-mute uppercase tracking-widest">Prompt</label>
+                  <label className="text-[11px] font-medium text-mute uppercase tracking-widest">{dict.promptLabel}</label>
                   {!videoImageUrl && (
                     <div className="flex items-center gap-1">
-                      <button type="button" onClick={() => setPrompt('')} title="Effacer"
+                      <button type="button" onClick={() => setPrompt('')} title={dict.clearPrompt}
                         className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
                         <svg className="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
                         </svg>
                       </button>
-                      <button type="button" onClick={handleCopyPrompt} title="Copier"
+                      <button type="button" onClick={handleCopyPrompt} title={dict.copyPrompt}
                         className="w-7 h-7 rounded-lg border border-line flex items-center justify-center text-mute hover:text-hi hover:bg-raised transition-colors">
                         {copied
                           ? <svg className="w-3.5 h-3.5 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
@@ -486,12 +500,12 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                 </div>
                 {videoImageUrl ? (
                   <div className="flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-mute select-none" style={{ minHeight: 120 }}>
-                    Subtle camera movement, product stays centered and in focus throughout. Soft natural lighting, photorealistic lifestyle scene. The furniture product is the main subject at all times.
+                    {dict.videoPromptPlaceholder}
                   </div>
                 ) : (
                   <textarea
                     value={prompt} onChange={e => setPrompt(e.target.value)} disabled={analyzingImage} rows={6}
-                    placeholder={analyzingImage ? 'Analyse en cours...' : analyzeError ? 'Décrivez la scène' : 'Dans quel environnement souhaitez-vous placer le meuble ?'}
+                    placeholder={analyzingImage ? dict.promptPlaceholderAnalyzing : analyzeError ? dict.promptPlaceholderError : dict.promptPlaceholderDefault}
                     className="w-full flex-1 rounded-xl border border-line bg-surface px-4 py-3 text-sm text-hi placeholder:text-mute resize-none outline-none focus:border-line-heavy focus:ring-2 focus:ring-black/[0.04] transition-all disabled:opacity-60 disabled:cursor-wait"
                   />
                 )}
@@ -513,8 +527,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                       <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span>Krediniz bitti. Video için 5 kredi gereklidir.{' '}
-                        <a href="/pricing" className="underline font-medium">Kredi satın al →</a>
+                      <span>{dict.outOfCreditsForVideo}{' '}
+                        <Link href={`/${lang}/pricing`} className="underline font-medium">{dict.buyCredits}</Link>
                       </span>
                     </div>
                   )}
@@ -529,14 +543,14 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                           <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                           <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                         </svg>
-                        Génération de la vidéo...
+                        {dict.generatingVideoStatus}
                       </>
                     ) : videoUrl ? (
                       <>
                         <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
                         </svg>
-                        Vidéo déjà créée
+                        {dict.videoAlreadyCreated}
                       </>
                     ) : (
                       <>
@@ -544,7 +558,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
                           <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                         </svg>
-                        Générer la vidéo
+                        {dict.generateVideoButton}
                       </>
                     )}
                   </button>
@@ -556,8 +570,8 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                       <svg className="w-4 h-4 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                         <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
                       </svg>
-                      <span>Krediniz bitti.{' '}
-                        <a href="/pricing" className="underline font-medium">Kredi satın al →</a>
+                      <span>{dict.outOfCredits}{' '}
+                        <Link href={`/${lang}/pricing`} className="underline font-medium">{dict.buyCredits}</Link>
                       </span>
                     </div>
                   )}
@@ -571,9 +585,9 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                         <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
                         <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
                       </svg>
-                      {genStatus === 'uploading' ? 'Chargement...' : 'Traitement...'}
+                      {genStatus === 'uploading' ? dict.uploading : dict.processing}
                     </>
-                  ) : videoMode ? 'Générer image + vidéo' : 'Générer les images'}
+                  ) : videoMode ? dict.generateImageVideoButton : dict.generateImagesButton}
                   </button>
                 </>
               )}
@@ -588,11 +602,11 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
               <div className="flex items-center justify-between mb-6">
                 <p className="text-[11px] font-medium text-mute uppercase tracking-widest">
                   {genStatus === 'pending' ? (
-                    <>Traitement{pollCount > 0 && <span className="font-normal normal-case tracking-normal ml-2">· vérification n°{pollCount}</span>}</>
-                  ) : 'Résultats'}
+                    <>{dict.processingResults}{pollCount > 0 && <span className="font-normal normal-case tracking-normal ml-2">· {interpolate(dict.checkAttempt, { count: pollCount })}</span>}</>
+                  ) : dict.results}
                 </p>
                 {genStatus === 'completed' && generatedImages.length > 0 && (
-                  <span className="text-xs text-mute bg-raised border border-line rounded-full px-2.5 py-0.5">{generatedImages.length} variante(s)</span>
+                  <span className="text-xs text-mute bg-raised border border-line rounded-full px-2.5 py-0.5">{plural(dict, generatedImages.length, 'variantsCount')}</span>
                 )}
               </div>
 
@@ -604,7 +618,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
 
               {genStatus === 'completed' && generatedImages.length > 0 && (
                 <div className="space-y-6">
-                  <GeneratedImages images={generatedImages} onSelectForVideo={handleSelectForVideo} generatingVideo={generatingVideo} selectedForVideo={selectedForVideo} />
+                  <GeneratedImages images={generatedImages} onSelectForVideo={handleSelectForVideo} generatingVideo={generatingVideo} selectedForVideo={selectedForVideo} dict={generatedImagesDict} />
                   {videoUrl && !videoImageUrl && <VideoPlayer videoUrl={videoUrl} />}
                 </div>
               )}
@@ -617,7 +631,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
       {videoImageUrl && videoUrl && (
         <section className="border-t border-line bg-surface py-10">
           <div className="max-w-4xl mx-auto px-6 space-y-4">
-            <p className="text-[11px] font-medium text-mute uppercase tracking-widest">Vidéo prête</p>
+            <p className="text-[11px] font-medium text-mute uppercase tracking-widest">{dict.videoReady}</p>
             {(
               <div className="space-y-3">
                 <VideoPlayer videoUrl={videoUrl} />
@@ -633,7 +647,7 @@ export default function MainPage({ userEmail, initialGenerations }: Props) {
                   <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                     <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
                   </svg>
-                  Télécharger la vidéo
+                  {dict.downloadVideo}
                 </button>
               </div>
             )}
