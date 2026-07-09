@@ -162,7 +162,6 @@
     "subscription": "Abonnement",
     "manageSubscription": "Gérer l'abonnement",
     "redirecting": "Redirection...",
-    "noSubscriptionError": "Aucun abonnement actif trouvé.",
     "genericError": "Une erreur est survenue.",
     "session": "Session",
     "logout": "Se déconnecter"

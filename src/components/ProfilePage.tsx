@@ -38,7 +38,7 @@ export default function ProfilePage({ userEmail, lang, dict, themeDict }: Props)
       })
       const data = await res.json()
       if (!res.ok || !data.url) {
-        setPortalError(data.error === 'no_subscription' ? dict.noSubscriptionError : dict.genericError)
+        setPortalError(dict.genericError)
         return
       }
       window.location.href = data.url

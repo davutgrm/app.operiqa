@@ -162,7 +162,6 @@
     "subscription": "Abonelik",
     "manageSubscription": "Aboneliği yönet",
     "redirecting": "Yönlendiriliyor...",
-    "noSubscriptionError": "Aktif abonelik bulunamadı.",
     "genericError": "Bir hata oluştu.",
     "session": "Oturum",
     "logout": "Çıkış yap"

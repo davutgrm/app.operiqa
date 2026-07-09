@@ -21,17 +21,20 @@ export async function POST(request: NextRequest) {
   if (!customerId && user.email) {
     const customers = await stripe.customers.list({ email: user.email, limit: 1 })
     customerId = customers.data[0]?.id ?? null
-    if (customerId) {
-      await supabase
-        .from('user_credits')
-        .update({ stripe_customer_id: customerId })
-        .eq('user_id', user.id)
-    }
   }
 
   if (!customerId) {
-    return NextResponse.json({ error: 'no_subscription' }, { status: 404 })
+    const created = await stripe.customers.create({
+      email: user.email ?? undefined,
+      metadata: { user_id: user.id },
+    })
+    customerId = created.id
   }
+
+  await supabase
+    .from('user_credits')
+    .update({ stripe_customer_id: customerId })
+    .eq('user_id', user.id)
 
   const { returnPath } = await request.json().catch(() => ({ returnPath: '/' }))
   const origin = request.nextUrl.origin
