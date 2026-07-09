@@ -3,6 +3,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
+import LanguageSwitcher from './LanguageSwitcher'
 import { interpolate } from '@/lib/i18n/format'
 import type { Locale } from '@/lib/i18n/config'
 import type { Dictionary } from '@/lib/i18n/dictionaries'
@@ -81,7 +82,10 @@ export default function ResetPasswordForm({ lang, dict, commonDict }: Props) {
       <div className="w-full max-w-sm">
 
         <div className="mb-8">
-          <p className="text-sm font-semibold text-hi tracking-tight mb-6">{commonDict.appName}</p>
+          <div className="flex items-center justify-between mb-6">
+            <p className="text-sm font-semibold text-hi tracking-tight">{commonDict.appName}</p>
+            <LanguageSwitcher lang={lang} />
+          </div>
           <h1 className="text-2xl font-semibold text-hi tracking-tight">{dict.title}</h1>
           <p className="text-sm text-mid mt-1.5">{dict.subtitle}</p>
         </div>
