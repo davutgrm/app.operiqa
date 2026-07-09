@@ -1,5 +1,6 @@
 'use client'
 
+import { useState } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { createClient } from '@/lib/supabase/client'
@@ -17,11 +18,35 @@ interface Props {
 
 export default function ProfilePage({ userEmail, lang, dict, themeDict }: Props) {
   const router = useRouter()
+  const [portalLoading, setPortalLoading] = useState(false)
+  const [portalError, setPortalError] = useState('')
 
   async function handleLogout() {
     const supabase = createClient()
     await supabase.auth.signOut()
     router.push(`/${lang}/login`)
+  }
+
+  async function handleManageSubscription() {
+    setPortalLoading(true)
+    setPortalError('')
+    try {
+      const res = await fetch('/api/portal', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ returnPath: `/${lang}/profile` }),
+      })
+      const data = await res.json()
+      if (!res.ok || !data.url) {
+        setPortalError(data.error === 'no_subscription' ? dict.noSubscriptionError : dict.genericError)
+        return
+      }
+      window.location.href = data.url
+    } catch {
+      setPortalError(dict.genericError)
+    } finally {
+      setPortalLoading(false)
+    }
   }
 
   return (
@@ -68,6 +93,22 @@ export default function ProfilePage({ userEmail, lang, dict, themeDict }: Props)
                 <p className="text-xs text-mute mt-0.5 tracking-wide">{dict.member}</p>
               </div>
             </div>
+          </div>
+
+          {/* Subscription */}
+          <div className="px-6 py-6 border-b border-line">
+            <p className="text-[10px] font-medium text-mute uppercase tracking-[0.14em] mb-5">{dict.subscription}</p>
+            {portalError && <p className="text-xs text-red-500 mb-3">{portalError}</p>}
+            <button
+              onClick={handleManageSubscription}
+              disabled={portalLoading}
+              className="flex items-center gap-2.5 text-sm tracking-wide rounded-lg px-3.5 py-2 border border-line text-hi hover:border-line-mid transition-colors disabled:opacity-50"
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.75} d="M3 10h18M7 15h1m4 0h1m-7 4h12a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+              </svg>
+              {portalLoading ? dict.redirecting : dict.manageSubscription}
+            </button>
           </div>
 
           {/* Session */}

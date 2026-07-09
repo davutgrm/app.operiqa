@@ -24,3 +24,7 @@ create policy "users_insert_own" on public.generations
 -- Users can only update their own rows
 create policy "users_update_own" on public.generations
   for update using (auth.uid() = user_id);
+
+-- Stripe customer ID, used to open the Billing Portal for subscription management
+alter table public.user_credits
+  add column if not exists stripe_customer_id text;

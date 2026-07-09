@@ -39,6 +39,15 @@ async function addCredits(userId: string, amount: number) {
   console.log(`[webhook] ✓ DONE — user: ${userId}, was: ${currentCredits}, added: ${amount}, now: ${newTotal}`)
 }
 
+async function saveStripeCustomerId(userId: string, customerId: string) {
+  const supabase = createServiceClient()
+  const { error } = await supabase
+    .from('user_credits')
+    .update({ stripe_customer_id: customerId })
+    .eq('user_id', userId)
+  if (error) console.error('[webhook] Failed to save stripe_customer_id:', error.message)
+}
+
 export async function POST(request: NextRequest) {
   const body = await request.text()
   const sig = request.headers.get('stripe-signature')
@@ -69,6 +78,9 @@ export async function POST(request: NextRequest) {
         if (!userId) throw new Error(`Missing user_id in session metadata (session: ${session.id})`)
         if (credits <= 0) throw new Error(`Invalid credits value in session metadata: ${session.metadata?.credits}`)
         await addCredits(userId, credits)
+        if (typeof session.customer === 'string') {
+          await saveStripeCustomerId(userId, session.customer)
+        }
       }
     }
 
