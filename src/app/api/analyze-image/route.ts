@@ -39,7 +39,7 @@ export async function POST(req: NextRequest) {
             },
             {
               type: 'text',
-              text: 'Analyze this furniture product image and write a short English scene description for a professional lifestyle photo. Only write the scene description, nothing else. Max 2 sentences.',
+              text: 'First identify the furniture product type in this image (e.g. sofa, armchair, dining table, desk, chair, bed, shelf, cabinet). Then write a short English lifestyle scene description for a professional photo, matching the room and setting to that product type — for example, a dining room or home office for a table, a living room for a sofa or armchair, a bedroom for a bed, a living room or study for a shelf. Only output the final scene description, nothing else (no product type label, no explanation). Max 2-3 sentences.',
             },
           ],
         },
