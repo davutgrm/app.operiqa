@@ -3,6 +3,8 @@ import Anthropic from '@anthropic-ai/sdk'
 
 const client = new Anthropic()
 
+const STYLE_SUFFIX = 'Photorealistic, high quality, detailed textures, professional interior photography, soft natural lighting.'
+
 export async function POST(req: NextRequest) {
   let body: { imageBase64: string; mediaType: string }
   try {
@@ -52,7 +54,7 @@ export async function POST(req: NextRequest) {
       .join('')
       .trim()
 
-    return NextResponse.json({ description })
+    return NextResponse.json({ description: `${description} ${STYLE_SUFFIX}` })
   } catch (err) {
     console.error('Anthropic API error:', err)
     return NextResponse.json({ error: 'Image analysis failed' }, { status: 500 })
