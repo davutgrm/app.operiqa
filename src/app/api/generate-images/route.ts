@@ -88,12 +88,15 @@ export async function POST(request: NextRequest) {
 
   // 3. n8n'e gönder — n8n arka planda işler, Supabase'i doğrudan günceller
   let enrichedPrompt =
-    `Change only the background and surrounding environment of this image. ` +
-    `Preserve the furniture's exact shape, color, material, texture, and proportions. ` +
-    `Do not redesign or alter the product in any way. ` +
-    `Do not add any additional furniture or seating to the scene. ` +
-    `Place the furniture in the following scene: ${prompt.trim()}. ` +
-    `Photorealistic, professional interior photography, 8K quality, natural lighting, no people.`
+    `The furniture product in the reference image must remain exactly as-is: same shape, same color, same material, same proportions, same design details. ` +
+    `Only replace the background and room environment — the product itself must not be redesigned, resized, distorted, or reoriented. ` +
+    `Position and angle the product naturally within the new scene, as a real photographer would compose the shot. ` +
+    `Do not add other furniture or people. ` +
+    `Place the product in this scene: ${prompt.trim()}.`
+
+  if (!/photorealistic/i.test(prompt)) {
+    enrichedPrompt += ` Photorealistic, professional interior photography, 8K quality, soft natural lighting.`
+  }
 
   enrichedPrompt = enrichedPrompt.replace(/^﻿/, '').replace(/[^\x00-\xFF]/g, ' ')
 
