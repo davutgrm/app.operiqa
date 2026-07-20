@@ -1,6 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
 import Anthropic from '@anthropic-ai/sdk'
-import sharp from 'sharp'
 
 const client = new Anthropic()
 
@@ -14,16 +13,9 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid JSON' }, { status: 400 })
   }
 
-  let { imageBase64, mediaType } = body
+  const { imageBase64, mediaType } = body
   if (!imageBase64 || !mediaType) {
     return NextResponse.json({ error: 'Missing imageBase64 or mediaType' }, { status: 400 })
-  }
-
-  // Claude'un vision API'si AVIF desteklemiyor — JPEG'e çevir
-  if (mediaType === 'image/avif') {
-    const jpegBuffer = await sharp(Buffer.from(imageBase64, 'base64')).jpeg({ quality: 92 }).toBuffer()
-    imageBase64 = jpegBuffer.toString('base64')
-    mediaType = 'image/jpeg'
   }
 
   const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp']
