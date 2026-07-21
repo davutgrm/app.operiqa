@@ -40,7 +40,7 @@ export async function proxy(request: NextRequest) {
   // stay outside the [lang] segment and skip locale handling entirely.
   if (pathname.startsWith('/api') || pathname.startsWith('/auth/')) {
     const { data: { user } } = await supabase.auth.getUser()
-    const PUBLIC_API_PATHS = ['/api/webhook', '/api/n8n-callback', '/api/video-callback']
+    const PUBLIC_API_PATHS = ['/api/webhook', '/api/n8n-callback', '/api/video-callback', '/auth/callback']
     if (!user && !PUBLIC_API_PATHS.includes(pathname)) {
       return NextResponse.redirect(new URL(`/${getLocale(request)}/login`, request.url))
     }
@@ -56,12 +56,12 @@ export async function proxy(request: NextRequest) {
   const { data: { user } } = await supabase.auth.getUser()
   const pathWithoutLocale = pathname.slice(`/${pathnameLocale}`.length) || '/'
 
-  const PUBLIC_PATHS = ['/login', '/auth/reset-password']
+  const PUBLIC_PATHS = ['/login', '/signup', '/auth/reset-password']
   if (!user && !PUBLIC_PATHS.includes(pathWithoutLocale)) {
     return NextResponse.redirect(new URL(`/${pathnameLocale}/login`, request.url))
   }
 
-  if (user && pathWithoutLocale === '/login') {
+  if (user && (pathWithoutLocale === '/login' || pathWithoutLocale === '/signup')) {
     return NextResponse.redirect(new URL(`/${pathnameLocale}`, request.url))
   }
 

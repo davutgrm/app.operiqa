@@ -31,7 +31,32 @@
     "backToLogin": "Girişe dön",
     "sending": "Gönderiliyor...",
     "sendResetLink": "Sıfırlama bağlantısı gönder",
-    "back": "← Geri"
+    "back": "← Geri",
+    "noAccount": "Hesabın yok mu?",
+    "signupLink": "Kayıt ol"
+  },
+  "signup": {
+    "signupTitle": "Kayıt ol",
+    "signupSubtitle": "Yapay zekayla lifestyle görseller ve videolar oluşturun.",
+    "nameLabel": "İsim (opsiyonel)",
+    "namePlaceholder": "Adınız",
+    "emailLabel": "E-posta",
+    "emailPlaceholder": "ad@sirket.com",
+    "passwordLabel": "Şifre",
+    "passwordPlaceholder": "En az 8 karakter",
+    "confirmPasswordLabel": "Şifre tekrar",
+    "confirmPasswordPlaceholder": "••••••••",
+    "passwordTooShortError": "Şifre en az 8 karakter olmalıdır.",
+    "passwordMismatchError": "Şifreler eşleşmiyor.",
+    "emailInUseError": "Bu e-posta adresiyle zaten bir hesap var.",
+    "signupError": "Kayıt oluşturulamadı. Lütfen tekrar deneyin.",
+    "signingUp": "Kayıt oluşturuluyor...",
+    "signupButton": "Kayıt ol",
+    "checkEmailTitle": "Emailinizi kontrol edin",
+    "checkEmailSubtitle": "Hesabınızı aktifleştirmek için gönderdiğimiz doğrulama bağlantısına tıklayın.",
+    "backToLogin": "Girişe dön",
+    "alreadyHaveAccount": "Zaten hesabın var mı?",
+    "loginLink": "Giriş yap"
   },
   "resetPassword": {
     "title": "Yeni şifre belirleyin",

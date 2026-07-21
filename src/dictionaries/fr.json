@@ -31,7 +31,32 @@
     "backToLogin": "Retour à la connexion",
     "sending": "Envoi en cours...",
     "sendResetLink": "Envoyer le lien de réinitialisation",
-    "back": "← Retour"
+    "back": "← Retour",
+    "noAccount": "Vous n'avez pas de compte ?",
+    "signupLink": "S'inscrire"
+  },
+  "signup": {
+    "signupTitle": "S'inscrire",
+    "signupSubtitle": "Créez des visuels et vidéos lifestyle avec l'IA.",
+    "nameLabel": "Nom (optionnel)",
+    "namePlaceholder": "Votre nom",
+    "emailLabel": "E-mail",
+    "emailPlaceholder": "nom@entreprise.com",
+    "passwordLabel": "Mot de passe",
+    "passwordPlaceholder": "8 caractères minimum",
+    "confirmPasswordLabel": "Confirmer le mot de passe",
+    "confirmPasswordPlaceholder": "••••••••",
+    "passwordTooShortError": "Le mot de passe doit comporter au moins 8 caractères.",
+    "passwordMismatchError": "Les mots de passe ne correspondent pas.",
+    "emailInUseError": "Un compte existe déjà avec cette adresse e-mail.",
+    "signupError": "Impossible de créer le compte. Veuillez réessayer.",
+    "signingUp": "Création du compte...",
+    "signupButton": "S'inscrire",
+    "checkEmailTitle": "Vérifiez votre e-mail",
+    "checkEmailSubtitle": "Cliquez sur le lien de confirmation que nous vous avons envoyé pour activer votre compte.",
+    "backToLogin": "Retour à la connexion",
+    "alreadyHaveAccount": "Vous avez déjà un compte ?",
+    "loginLink": "Se connecter"
   },
   "resetPassword": {
     "title": "Définir un nouveau mot de passe",

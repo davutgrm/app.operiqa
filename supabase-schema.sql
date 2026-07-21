@@ -28,3 +28,16 @@ create policy "users_update_own" on public.generations
 -- Stripe customer ID, used to open the Billing Portal for subscription management
 alter table public.user_credits
   add column if not exists stripe_customer_id text;
+
+-- SECURITY FIX: user_credits had no RLS, exposing all users' balances (and
+-- write access) to anyone holding the public anon key. Scope it like generations.
+alter table public.user_credits enable row level security;
+
+create policy "users_select_own_credits" on public.user_credits
+  for select using (auth.uid() = user_id);
+
+create policy "users_insert_own_credits" on public.user_credits
+  for insert with check (auth.uid() = user_id);
+
+create policy "users_update_own_credits" on public.user_credits
+  for update using (auth.uid() = user_id);

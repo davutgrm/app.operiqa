@@ -2,6 +2,7 @@
 
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
+import Link from 'next/link'
 import { createClient } from '@/lib/supabase/client'
 import LanguageSwitcher from './LanguageSwitcher'
 import { interpolate } from '@/lib/i18n/format'
@@ -146,6 +147,13 @@ export default function LoginForm({ lang, dict, commonDict }: Props) {
             >
               {loading ? dict.loggingIn : dict.loginButton}
             </button>
+
+            <p className="text-center text-xs text-mid">
+              {dict.noAccount}{' '}
+              <Link href={`/${lang}/signup`} className="text-hi font-medium hover:opacity-70 transition-opacity">
+                {dict.signupLink}
+              </Link>
+            </p>
           </form>
         ) : resetSent ? (
           <div className="space-y-4">
